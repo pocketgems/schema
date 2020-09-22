@@ -1,6 +1,23 @@
 const assert = require('assert')
 
+let ajv // only defined if needed
 const deepcopy = require('rfdc')()
+
+/**
+ * Thrown if a compiled schema validator is asked to validate an invalid value.
+ */
+class ValidationError extends Error {
+  /**
+   * @param {string} name a user-provided name describing the schema
+   * @param {*} badValue the value which did not validate
+   * @param {object} errors how badValue failed to conform to the schema
+   */
+  constructor (name, badValue, errors) {
+    super(`Validation Error: ${name}`)
+    this.badValue = badValue
+    this.validationErrors = errors
+  }
+}
 
 /**
  * The base schema object
@@ -197,6 +214,48 @@ class BaseSchema {
     const ret = deepcopy(this.__jsonSchema())
     ret.$schema = 'http://json-schema.org/draft-07/schema#'
     return ret
+  }
+
+  /**
+   * Returns a validator function which throws ValidationError if the value it
+   * is asked to validate does not match the schema.
+   *
+   * Locks the current schema.
+   *
+   * @param {string} name the name of this schema (to distinguish errors)
+   * @param {*} [compiler] the ajv or equivalent JSON schema compiler to use
+   * @param {returnSchemaToo} [returnSchemaToo] whether to return jsonSchema as
+   *   well as the validator
+   * @returns {Function} call on a value to validate it; throws on error
+   */
+  compile (name, compiler, returnSchemaToo) {
+    assert.ok(name, 'name is required')
+    if (!compiler) {
+      if (!ajv) {
+        ajv = new (require('ajv'))({ allErrors: true })
+      }
+      compiler = ajv
+    }
+    this.lock()
+    const jsonSchema = this.jsonSchema()
+    const validate = compiler.compile(this.jsonSchema())
+    const validateOrDie = v => {
+      if (!validate(v)) {
+        throw new ValidationError(name, v, validate.errors)
+      }
+    }
+    if (returnSchemaToo) {
+      return { jsonSchema, validateOrDie }
+    }
+    return validateOrDie
+  }
+
+  /**
+   * See {@link compile}.
+   * @returns {Object} contains jsonSchema and validateOrDie
+   */
+  getValidatorAndJSONSchema (name, compiler) {
+    return this.compile(name, compiler, true)
   }
 
   /**
@@ -536,6 +595,9 @@ class S {
     STR_TODEA_BASE32: S.str.desc('Only select digits and uppercase ASCII characters')
       .pattern(/^[ABCDEFGHJLMNPQRSTUVWXYZ023456789]+$/)
   })
+
+  /** Thrown if validation fails. */
+  static ValidationError = ValidationError
 }
 
 module.exports = S

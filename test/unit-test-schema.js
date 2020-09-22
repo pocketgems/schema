@@ -1,5 +1,6 @@
 const assert = require('assert')
 
+const ajv = new (require('ajv'))({ allErrors: true })
 const FS = require('fluent-schema')
 
 const S = require('../src/schema')
@@ -484,6 +485,20 @@ class NewFeatureTest extends BaseTest {
       // Critical properties cannot be overwritten even after copying
       str.copy().min(1)
     }).toThrow('is already set')
+  }
+
+  testCompile () {
+    const schema = S.str.min(2)
+    const validateOrDie = schema.compile('testSchema', ajv, false)
+    expect(schema.__isLocked).toBe(true)
+    expect(() => validateOrDie(3)).toThrow(S.ValidationError)
+    expect(() => validateOrDie('3')).toThrow('Validation Error: testSchema')
+
+    // can compile with the built-in ajv too
+    const x = schema.getValidatorAndJSONSchema('testSchema')
+    expect(() => x.validateOrDie(3)).toThrow(S.ValidationError)
+    expect(() => x.validateOrDie('3')).toThrow('Validation Error: testSchema')
+    expect(x.jsonSchema).toEqual(schema.jsonSchema())
   }
 }
 

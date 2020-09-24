@@ -38,7 +38,7 @@ S.obj({ key: schema }) // is the same as S.object().prop('key', schema)
 S.arr()                // replace S.array()
 S.arr(schema)          // is the same as S.array().items(schema)
 S.str                  // replace S.string()
-S.num                  // replace S.number()
+S.double                  // replace S.doubleber()
 S.int                  // replace S.integer()
 S.bool                 // replace S.boolean()
 
@@ -50,7 +50,7 @@ S.[*]()
 S.obj().max(5).min(2)   // replace maxProperties() & minProperties()
 S.arr().max(1).min(1)   // replace maxItems() & minItems()
 S.str.max(3).min(2)     // replace maxLength() & minLength()
-S.num.max(0.5).min(0.2) // replace maximum() & minimum()
+S.double.max(0.5).min(0.2) // replace maximum() & minimum()
 S.int.max(2).min(1)     // replace maximum() & minimum()
 ```
 

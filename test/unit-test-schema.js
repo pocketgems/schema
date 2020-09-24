@@ -33,7 +33,7 @@ class ProxySchema {
       object: 'obj',
       string: 'str',
       integer: 'int',
-      number: 'num',
+      number: 'double',
       boolean: 'bool'
     }
     for (const [left, right] of Object.entries(classMapping)) {
@@ -233,14 +233,14 @@ class ValidationTest extends BaseTest {
   }
 
   testNumber () {
-    S.num.min(0.2)
+    S.double.min(0.2)
     expect(() => {
-      S.num.min('123')
+      S.double.min('123')
     }).toThrow(/must be a number/)
 
-    S.num.max(0.2)
+    S.double.max(0.2)
     expect(() => {
-      S.num.max('123')
+      S.double.max('123')
     }).toThrow(/must be a number/)
   }
 

@@ -550,7 +550,7 @@ class S {
   /**
    * Get a new NumberSchema object.
    */
-  static get num () { return new NumberSchema() }
+  static get double () { return new NumberSchema() }
 
   /**
    * Get a new IntegerSchema object.

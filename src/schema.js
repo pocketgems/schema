@@ -809,8 +809,8 @@ class S {
       .pattern(/^[-_a-zA-Z0-9]+$/),
     // oversimplified, quick regex to check that a string looks like an email
     STR_EMAIL: S.str.pattern(/^.+@.+$/).desc('an e-mail address').lock(),
-    STR_TODEA_BASE32: S.str.desc('Only select digits and uppercase ASCII characters')
-      .pattern(/^[ABCDEFGHJLMNPQRSTUVWXYZ023456789]+$/)
+    STR_TODEA_BASE32: S.str.pattern(/^[ABCDEFGHJLMNPQRSTUVWXYZ023456789]+$/)
+      .desc('Only select digits and uppercase ASCII characters')
   })
 
   /** Thrown if validation fails. */

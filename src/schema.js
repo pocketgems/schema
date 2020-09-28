@@ -4,6 +4,21 @@ let ajv // only defined if needed
 const deepcopy = require('rfdc')()
 
 /**
+ * Any non alphanumerical characters are stripped, the immediate next character
+ * is capitalized.
+ * @param {String} str
+ * @return A string ID, AKA an upper camel case string.
+ */
+function toStringID (str) {
+  if (!str || str.length === 0) {
+    return str
+  }
+  return str.split(/[^a-zA-Z0-9]/).map(s => {
+    return s.replace(/^./, s[0].toUpperCase())
+  }).join('')
+}
+
+/**
  * Thrown if a compiled schema validator is asked to validate an invalid value.
  */
 class ValidationError extends Error {
@@ -26,7 +41,12 @@ class BaseSchema {
   /**
    * The json schema type
    */
-  static TYPE
+  static JSON_SCHEMA_TYPE
+
+  /**
+   * The C2J schema type
+   */
+  static C2J_SCHEMA_TYPE
 
   /**
    * The max* property name.
@@ -62,7 +82,7 @@ class BaseSchema {
      * Indicates whether an object is locked. See {@link lock}.
      */
     this.__isLocked = false
-    this.__setProp('type', this.constructor.TYPE)
+    this.__setProp('type', this.constructor.JSON_SCHEMA_TYPE)
   }
 
   /**
@@ -257,6 +277,56 @@ class BaseSchema {
   getValidatorAndJSONSchema (name, compiler) {
     return this.compile(name, compiler, true)
   }
+  /**
+   * @typedef {Object} C2JSchemaReturnValue
+   * @property {String} retName The actual name used for the shape schema
+   * @property {Object} retShape The shape schema
+   * @property {String} retDoc The documentation / description for the shape
+   *   schema
+   */
+
+  /**
+   * Generates C2J shape schema. Derives a name for the generated shape schema
+   * based on the 'title' property then fallback to defaultName. Nested schema
+   * uses the current shape schema name as prefix / scope. Adds the current
+   * shape schema to the container if requested. Nested shape schemas are
+   * always added to the container.
+   *
+   * @param {Object} param
+   * @param {Object} [param.defaultName] A tentative name for the shape, if
+   *   it is added to the container. Also a prefix for nested shapes
+   * @param {String} [param.addToContainer=true] If the shape schema should be
+   *   added to the container. Nested shapes will always be added to the
+   *   container.
+   * @param {ContainerObject} param.container A container object that
+   *   implements addShape(name, shapeSchema)
+   * @param {String} [param.location] The location for the schema, e.g. header
+   *   queryString, etc...
+   * @return {C2JSchemaReturnValue} Metadata of the shape along with the shape.
+   */
+  c2jShape ({ defaultName = '', container, addToContainer = true }) {
+    const ret = {
+      type: this.constructor.C2J_SCHEMA_TYPE
+    }
+    const max = this.__getProp(this.constructor.MAX_PROP_NAME)
+    if (max !== undefined) {
+      ret.max = max
+    }
+    const min = this.__getProp(this.constructor.MIN_PROP_NAME)
+    if (min !== undefined) {
+      ret.min = min
+    }
+
+    const name = toStringID(this.__getProp('title') || defaultName)
+    if (addToContainer) {
+      container.addShape(name, ret)
+    }
+    return {
+      retName: name,
+      retShape: ret,
+      retDoc: this.__getProp('description')
+    }
+  }
 
   /**
    * @return A copy of the Todea Schema object. Locked objects become unlocked.
@@ -304,7 +374,8 @@ class BaseSchema {
  * The ObjectSchema class.
  */
 class ObjectSchema extends BaseSchema {
-  static TYPE = 'object'
+  static JSON_SCHEMA_TYPE = 'object'
+  static C2J_SCHEMA_TYPE = 'structure'
   static MAX_PROP_NAME = 'maxProperties'
   static MIN_PROP_NAME = 'minProperties'
 
@@ -359,13 +430,62 @@ class ObjectSchema extends BaseSchema {
     Object.assign(ret.objectSchemas, this.objectSchemas)
     return ret
   }
+
+  c2jShape ({
+    addToContainer = true,
+    container,
+    defaultName,
+    location
+  }) {
+    const { retName, retShape, retDoc } = super.c2jShape({
+      addToContainer: false, // Don't add yet, members and required not setup.
+      container,
+      defaultName
+    })
+    const members = {}
+    const required = []
+    for (const [name, p] of Object.entries(this.objectSchemas)) {
+      const camelName = toStringID(name)
+      const ret = p.c2jShape({
+        defaultName: retName + camelName,
+        container
+      })
+      const shapeName = ret.retName
+      const shapeDoc = ret.retDoc
+      if (p.required) {
+        required.push(camelName)
+      }
+      const shapeSpec = {
+        shape: shapeName,
+        locationName: name
+      }
+      if (location) {
+        shapeSpec.location = location
+      }
+      if (shapeDoc) {
+        shapeSpec.documentation = shapeDoc
+      }
+      members[camelName] = shapeSpec
+    }
+
+    retShape.members = members
+    if (required.length !== 0) {
+      retShape.required = required
+    }
+
+    if (addToContainer) {
+      container.addShape(retName, retShape)
+    }
+    return { retName, retShape, retDoc }
+  }
 }
 
 /**
  * The ArraySchema class.
  */
 class ArraySchema extends BaseSchema {
-  static TYPE = 'array'
+  static JSON_SCHEMA_TYPE = 'array'
+  static C2J_SCHEMA_TYPE = 'list'
   static MAX_PROP_NAME = 'maxItems'
   static MIN_PROP_NAME = 'minItems'
 
@@ -398,13 +518,38 @@ class ArraySchema extends BaseSchema {
     ret.itemsSchema = this.itemsSchema
     return ret
   }
+
+  c2jShape ({ defaultName, addToContainer = true, container }) {
+    const { retName, retShape, retDoc } = super.c2jShape({
+      defaultName: defaultName + 'List',
+      container,
+      addToContainer: false // Don't add yet, since member is not setup.
+    })
+
+    const ret = this.itemsSchema.c2jShape({
+      defaultName, container
+    })
+    const shapeName = ret.retName
+    const shapeDoc = ret.retDoc
+    const shapeSpec = { shape: shapeName }
+    if (retDoc) {
+      shapeSpec.documentation = shapeDoc
+    }
+
+    retShape.member = shapeSpec
+    if (addToContainer) {
+      container.addShape(retName, retShape)
+    }
+    return { retName, retShape, retDoc }
+  }
 }
 
 /**
  * The NumberSchema class.
  */
 class NumberSchema extends BaseSchema {
-  static TYPE = 'number'
+  static JSON_SCHEMA_TYPE = 'number'
+  static C2J_SCHEMA_TYPE = 'double'
   static MAX_PROP_NAME = 'maximum'
   static MIN_PROP_NAME = 'minimum'
 
@@ -422,7 +567,8 @@ class NumberSchema extends BaseSchema {
  * The IntegerSchema class.
  */
 class IntegerSchema extends NumberSchema {
-  static TYPE = 'integer'
+  static JSON_SCHEMA_TYPE = 'integer'
+  static C2J_SCHEMA_TYPE = 'integer'
 
   /**
    * Validate input to min/max.
@@ -438,7 +584,8 @@ class IntegerSchema extends NumberSchema {
  * The StringSchema class.
  */
 class StringSchema extends BaseSchema {
-  static TYPE = 'string'
+  static JSON_SCHEMA_TYPE = 'string'
+  static C2J_SCHEMA_TYPE = 'string'
   static MAX_PROP_NAME = 'maxLength'
   static MIN_PROP_NAME = 'minLength'
 
@@ -465,20 +612,44 @@ class StringSchema extends BaseSchema {
     assert.ok(typeof pattern === 'string', 'Pattern must be a string')
     return this.__setProp('pattern', pattern)
   }
+
+  c2jShape ({
+    addToContainer = true,
+    container,
+    defaultName
+  }) {
+    const ret = super.c2jShape({
+      addToContainer: false,
+      container,
+      defaultName
+    })
+    for (const prop of ['pattern', 'enum']) {
+      const val = this.__getProp(prop)
+      if (val) {
+        ret.retShape[prop] = val
+      }
+    }
+    if (addToContainer) {
+      container.addShape(ret.retName, ret.retShape)
+    }
+    return ret
+  }
 }
 
 /**
  * The BooleanSchema class.
  */
 class BooleanSchema extends BaseSchema {
-  static TYPE = 'boolean'
+  static JSON_SCHEMA_TYPE = 'boolean'
+  static C2J_SCHEMA_TYPE = 'boolean'
 }
 
 /**
  * The MapSchema class.
  */
 class MapSchema extends ArraySchema {
-  static TYPE = 'array'
+  static JSON_SCHEMA_TYPE = 'array'
+  static C2J_SCHEMA_TYPE = 'map'
 
   constructor () {
     super()
@@ -494,7 +665,7 @@ class MapSchema extends ArraySchema {
    * @param {StringSchema} key A StringSchema object for keys.
    */
   key (key) {
-    assert.ok(key.constructor.TYPE === 'string', 'Key must be strings')
+    assert.ok(key.constructor.JSON_SCHEMA_TYPE === 'string', 'Key must be strings')
     assert.ok(key.required, 'key must be required')
     this.objectSchema.prop('key', key)
     return this
@@ -510,7 +681,7 @@ class MapSchema extends ArraySchema {
     return this
   }
 
-  __jsonSchema () {
+  __finalizeSchema () {
     assert.ok((this.objectSchema.__getProp('properties') || {}).value,
       'Must have a value schema')
     if (!this.objectSchema.__getProp('properties').key) {
@@ -519,6 +690,10 @@ class MapSchema extends ArraySchema {
     if (!this.__getProp('items')) {
       super.items(this.objectSchema) // items on this is disabled.
     }
+  }
+
+  __jsonSchema () {
+    this.__finalizeSchema()
     return super.__jsonSchema()
   }
 
@@ -526,6 +701,48 @@ class MapSchema extends ArraySchema {
     const ret = super.copy()
     ret.objectSchema = this.objectSchema.copy()
     return ret
+  }
+
+  c2jShape ({
+    addToContainer = true,
+    container,
+    defaultName
+  }) {
+    this.__finalizeSchema()
+
+    // To C2J MapSchema is just map, no Array of Objects. Here we bypass super
+    // and go directly to BaseSchema for common functionalities.
+    const { retName, retShape, retDoc } = BaseSchema.prototype.c2jShape.call(
+      this,
+      {
+        defaultName: defaultName,
+        container,
+        addToContainer: false
+      }
+    )
+
+    for (const propName of ['key', 'value']) {
+      const propDefaultName = defaultName + toStringID(propName)
+      const ret = this.objectSchema.objectSchemas[propName]
+        .c2jShape({
+          defaultName: propDefaultName,
+          container
+        })
+      const shapeName = ret.retName
+      const shapeDoc = ret.retDoc
+      const shapeSpec = {
+        shape: shapeName,
+        locationName: propName
+      }
+      if (shapeDoc) {
+        shapeSpec.documentation = shapeDoc
+      }
+      retShape[propName] = shapeSpec
+    }
+    if (addToContainer) {
+      container.addShape(retName, retShape)
+    }
+    return { retName, retShape, retDoc }
   }
 }
 
@@ -598,6 +815,13 @@ class S {
 
   /** Thrown if validation fails. */
   static ValidationError = ValidationError
+}
+
+// istanbul ignore else
+if (process.env.NODE_ENV === 'localhost') {
+  S.__private = {
+    toStringID
+  }
 }
 
 module.exports = S

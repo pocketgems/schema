@@ -500,6 +500,12 @@ class NewFeatureTest extends BaseTest {
     expect(() => x.validateOrDie('3')).toThrow('Validation Error: testSchema')
     expect(x.jsonSchema).toEqual(schema.jsonSchema())
   }
+
+  testStringID () {
+    expect(S.__private.toStringID('abc')).toBe('Abc')
+    expect(S.__private.toStringID('ab c-a_b12c')).toBe('AbCAB12c')
+    expect(S.__private.toStringID('a-b12-aa ff')).toBe('AB12AaFf')
+  }
 }
 
 runTests(FeatureParityTest, ValidationTest, NewFeatureTest)

@@ -1,7 +1,5 @@
 # Todea Schema Library <!-- omit in toc -->
-Todea Schema library allows developers to quickly construct [JSON Schema](https://json-schema.org/understanding-json-schema/reference/index.html) without managing large JSON objects directly. It implements a [fluent-schema](https://github.com/fastify/fluent-schema) and will only discuss features unique to this library like API and outputs
-- [JSON Schema](https://json-schema.org/understanding-json-schema/reference/index.html)
-- [AWS C2J schema](tbd).
+Todea Schema library allows developers to quickly construct [JSON Schema](https://json-schema.org/understanding-json-schema/reference/index.html) and [AWS C2J Shape Schema](aws-c2j.md) without managing large JSON objects directly. It implements a subset of [the JSON Schema specification](https://json-schema.org/understanding-json-schema/reference/index.html) and a [fluent-schema](https://github.com/fastify/fluent-schema) like API.
 
 This document assumes prior knowledge of [JSON Schema](https://json-schema.org/understanding-json-schema/reference/index.html) and [fluent-schema API](https://github.com/fastify/fluent-schema) and will only discuss features unique to this library. Please familiarize yourself with the linked docs before continuing.
 
@@ -12,6 +10,7 @@ This document assumes prior knowledge of [JSON Schema](https://json-schema.org/u
   - [Map Schema](#map-schema)
   - [Common Schemas](#common-schemas)
   - [Getting JSON Schema](#getting-json-schema)
+  - [Getting C2J Shape Schema](#getting-c2j-shape-schema)
   - [Fluent-schema compatible](#fluent-schema-compatible)
 - [Secure](#secure)
   - [Deprecated JSON Schema Features](#deprecated-json-schema-features)
@@ -150,6 +149,9 @@ if (schema.isTodeaSchema) {
   schema.jsonSchema()
 }
 ```
+
+### Getting C2J Shape Schema
+The `c2jShape()` API exports C2J Shape schemas. It must be used in conjunction with the [AWS C2J Exporter](aws-c2j.md).
 
 ### Fluent-schema compatible
 For libraries that accepts a fluent-schema object as the parameter (e.g. fastify), you may pass Todea Schema objects instead. Todea Schema implements fluent-schema's `isFluentSchema` and `valueOf()` APIs to achieve compatibility.

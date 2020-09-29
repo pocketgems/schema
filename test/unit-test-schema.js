@@ -105,18 +105,18 @@ class FeatureParityTest extends BaseTest {
     // further modification, then to further modify the schema users need to
     // explicitly unlock-by-copying.
     const str = P.string()
-    P.object().prop('a', str.description('aaa')).verify()
+    P.object().prop('a', str).verify()
     expect(() => {
-      P.object().prop('b', str.description('bbb')).verify()
+      P.object().prop('b', str.minLength(1)).verify()
     }).toThrow(/is locked/)
 
     const obj = S.obj().lock()
     expect(() => {
-      obj.desc('aaa')
+      obj.min(1)
     }).toThrow(/is locked/)
 
     expect(() => {
-      obj.copy().desc('bbb')
+      obj.copy().min(1)
     }).not.toThrow()
   }
 
@@ -374,19 +374,26 @@ class NewFeatureTest extends BaseTest {
     const a = S.str
     S.obj({ a })
     expect(() => {
-      a.desc('aaa')
+      a.min(1)
     }).toThrow('is locked')
+    const a2 = a.desc('aaa').min(1)
+    const aSchema = a.jsonSchema()
+    const a2Schema = a2.jsonSchema()
+    expect(aSchema.description).toBe(undefined)
+    expect(aSchema.minLength).toBe(undefined)
+    expect(a2Schema.description).toBe('aaa')
+    expect(a2Schema.minLength).toBe(1)
 
     const b = S.str
     S.arr(b)
     expect(() => {
-      b.desc('aaa')
+      b.min(1)
     }).toThrow('is locked')
 
     const c = S.str
     S.map.value(c)
     expect(() => {
-      c.desc('aaa')
+      c.min(1)
     }).toThrow('is locked')
   }
 

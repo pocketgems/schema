@@ -94,7 +94,8 @@ class BaseSchema {
   }
 
   /**
-   * Sets a value in __properties. Throws if object is locked, or property with
+   * Sets a value in __properties. Throws if object is locked (unless the
+   * property is allowed to be overridden), or property with
    * the same name already exists and override is not allowed.
    * @param {String} name Name of the property
    * @param {*} val The value for the property
@@ -103,14 +104,14 @@ class BaseSchema {
    *   is allowed.
    */
   __setProp (name, val, { allowOverride = false } = {}) {
-    assert.ok(!this.__isLocked,
+    assert.ok(!this.__isLocked || allowOverride,
       'Schema is locked. Call copy then further modify the schema')
     assert.ok(allowOverride ||
        !Object.prototype.hasOwnProperty.call(this.__properties, name),
       `Property ${name} is already set.`)
-    const shouldOverride = allowOverride &&
-      Object.prototype.hasOwnProperty.call(this.__properties, name)
-    const ret = shouldOverride ? this.copy() : this
+    const shouldCopy = this.__isLocked || (allowOverride &&
+      Object.prototype.hasOwnProperty.call(this.__properties, name))
+    const ret = shouldCopy ? this.copy() : this
     ret.__properties[name] = val
     return ret
   }

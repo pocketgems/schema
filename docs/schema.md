@@ -19,7 +19,7 @@ This document assumes prior knowledge of [JSON Schema](https://json-schema.org/u
   - [Lock & Copy](#lock--copy)
 - [Performant](#performant)
   - [In-Place Mutation](#in-place-mutation)
-  - [On-demand Copy](#on-demand-copy)
+  - [Explicit Copy](#explicit-copy)
 
 
 ## Convenient
@@ -244,33 +244,40 @@ const schema = S.str
 
 When some code tries to modify a locked `schema`, an error is thrown.
 ```javascript
-schema.desc('desc') // throws an exception
+schema.min(1) // throws an exception
 ```
 
 A locked schema object can be unlocked by copying; after copying further modifications can be made.
 ```javascript
-schema.copy().desc('desc')
+const newSchema = schema.copy().min(1)
 ```
 
-When a schema object is passed into another schema object, e.g. `S.obj.prop()`, `S.arr.items()` or `S.map.value()`, the ownership of the input schema object is transferred to the containing schema object. The input schema object is locked automatically, so further modifications to the nested schema objects are prohibited. This behavior allows the library to support [on-demand copying](#on-demand-copy).
+When a schema object is passed into another schema object, e.g. `S.obj.prop()`, `S.arr.items()` or `S.map.value()`, the ownership of the input schema object is transferred to the containing schema object. The input schema object is locked automatically, so further modifications to the nested schema objects are prohibited. This behavior allows the library to only [copy when explicitly requested](#explicit-copy).
 ```javascript <!-- embed:../test/unit-test-schema.js:scope:testAutoLocking -->
   testAutoLocking () {
     const a = S.str
     S.obj({ a })
     expect(() => {
-      a.desc('aaa')
+      a.min(1)
     }).toThrow('is locked')
+    const a2 = a.desc('aaa').min(1)
+    const aSchema = a.jsonSchema()
+    const a2Schema = a2.jsonSchema()
+    expect(aSchema.description).toBe(undefined)
+    expect(aSchema.minLength).toBe(undefined)
+    expect(a2Schema.description).toBe('aaa')
+    expect(a2Schema.minLength).toBe(1)
 
     const b = S.str
     S.arr(b)
     expect(() => {
-      b.desc('aaa')
+      b.min(1)
     }).toThrow('is locked')
 
     const c = S.str
     S.map.value(c)
     expect(() => {
-      c.desc('aaa')
+      c.min(1)
     }).toThrow('is locked')
   }
 ```
@@ -292,13 +299,15 @@ S.str
 S.obj().desc('aaa').title('')
 S.arr().min(1).max(2)
 const myBool = S.bool.desc('aa').title('something')
-myBool.desc('bb') // Description is overwritten
+// myBool is copied; the copy has a different description than myBool
+const newSchema = myBool.desc('bb')
 ```
 
-### On-demand Copy
-This library does not implicitly copy any objects, so there is no hidden cost while using this library. On-demand copy works because nested schema objects are [locked as they become nested](#lock--copy). Copies of objects are only created when
+### Explicit Copy
+To avoid hidden costs while using this library, schema copies are generally only made when explicitly requested. Explicit copy works because nested schema objects are [locked as they become nested](#lock--copy). Copies of objects are only created when
 - Todea Schema object is copied using `copy()`
 - JSON Schema is requested using `jsonSchema()`
+- desc() or examples() is called on a locked schema, or a schema which already has those properties defined (this conveniently allows a schema to be used in many places, but given different descriptions based on the context)
 
 The copying behavior isolates modifications to the returned objects from the original object.
 ```javascript <!-- embed:../test/unit-test-schema.js:scope:testJsonSchemaIsolation -->

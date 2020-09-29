@@ -113,6 +113,9 @@ class BaseSchema {
       Object.prototype.hasOwnProperty.call(this.__properties, name))
     const ret = shouldCopy ? this.copy() : this
     ret.__properties[name] = val
+    if (this.__isLocked) {
+      ret.lock()
+    }
     return ret
   }
 

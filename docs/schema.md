@@ -307,7 +307,8 @@ const newSchema = myBool.desc('bb')
 To avoid hidden costs while using this library, schema copies are generally only made when explicitly requested. Explicit copy works because nested schema objects are [locked as they become nested](#lock--copy). Copies of objects are only created when
 - Todea Schema object is copied using `copy()`
 - JSON Schema is requested using `jsonSchema()`
-- desc() or examples() is called on a locked schema, or a schema which already has those properties defined (this conveniently allows a schema to be used in many places, but given different descriptions based on the context)
+- desc() or examples() is called on a locked schema, or a schema which already has those properties defined (this conveniently allows a schema to be used in many places, but given different descriptions based on the context). The copied
+schema will be locked after the change is made.
 
 The copying behavior isolates modifications to the returned objects from the original object.
 ```javascript <!-- embed:../test/unit-test-schema.js:scope:testJsonSchemaIsolation -->

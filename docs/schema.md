@@ -260,13 +260,11 @@ When a schema object is passed into another schema object, e.g. `S.obj.prop()`, 
     expect(() => {
       a.min(1)
     }).toThrow('is locked')
-    const a2 = a.desc('aaa').min(1)
+    const a2 = a.desc('aaa')
     const aSchema = a.jsonSchema()
     const a2Schema = a2.jsonSchema()
     expect(aSchema.description).toBe(undefined)
-    expect(aSchema.minLength).toBe(undefined)
     expect(a2Schema.description).toBe('aaa')
-    expect(a2Schema.minLength).toBe(1)
 
     const b = S.str
     S.arr(b)

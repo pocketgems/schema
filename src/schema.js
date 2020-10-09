@@ -156,10 +156,8 @@ class BaseSchema {
    *   description.
    */
   desc (d) {
-    if (Array.isArray(d)) {
-      d = d.join(' ')
-    }
     assert.ok(typeof d === 'string', 'Description must be a string.')
+    d = d.trim().replace(/\n/g, ' ')
     return this.__setProp('description', d, { allowOverride: true })
   }
 

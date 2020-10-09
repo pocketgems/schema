@@ -459,13 +459,12 @@ class NewFeatureTest extends BaseTest {
   }
 
   testLongDescription () {
-    const intWithDescription = S.int.desc([
-      'Some',
-      'long',
-      'description.'
-    ])
+    const intWithDescription = S.int.desc(`
+this will
+get combined
+into **one** string`)
     expect(intWithDescription.jsonSchema().description)
-      .toBe('Some long description.')
+      .toBe('this will get combined into **one** string')
   }
 
   testLongExamples () {

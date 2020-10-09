@@ -79,16 +79,15 @@ Multiple calls to `prop()` can be simplified to one single call on `props()`. `p
 Similarly, `S.arr().items(schema)` can be simplified to `S.arr(schema)`.
 
 ### Long Descriptions
-Long descriptions can be provided as an array of strings. These strings will be joined by a space character to form the final description.
+Long descriptions can should use multiline Node strings. These strings will be joined by a space character to form the final description. Keep in mind that Markdown is supported in descriptions rendered to Swagger.
 ```javascript <!-- embed:../test/unit-test-schema.js:scope:testLongDescription -->
   testLongDescription () {
-    const intWithDescription = S.int.desc([
-      'Some',
-      'long',
-      'description.'
-    ])
+    const intWithDescription = S.int.desc(`
+this will
+get combined
+into **one** string`)
     expect(intWithDescription.jsonSchema().description)
-      .toBe('Some long description.')
+      .toBe('this will get combined into **one** string')
   }
 ```
 

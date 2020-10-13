@@ -1,7 +1,7 @@
 const assert = require('assert')
 
 let ajv // only defined if needed
-const deepcopy = require('rfdc')()
+const deepcopy = require('rfdc')() // cspell:disable-line
 
 /**
  * Any non alphanumerical characters are stripped, the immediate next character
@@ -811,6 +811,7 @@ class S {
       .pattern(/^[-_a-zA-Z0-9]+$/),
     // oversimplified, quick regex to check that a string looks like an email
     STR_EMAIL: S.str.pattern(/^.+@.+$/).desc('an e-mail address').lock(),
+    // cspell: disable-next-line
     STR_TODEA_BASE32: S.str.pattern(/^[ABCDEFGHJLMNPQRSTUVWXYZ023456789]+$/)
       .desc('Only select digits and uppercase ASCII characters')
   })

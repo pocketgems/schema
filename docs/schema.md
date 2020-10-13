@@ -17,7 +17,7 @@ This document assumes prior knowledge of [JSON Schema](https://json-schema.org/u
   - [Required By Default](#required-by-default)
   - [Set Once Only](#set-once-only)
   - [Lock & Copy](#lock--copy)
-- [Performant](#performant)
+- [Efficient](#efficient)
   - [In-Place Mutation](#in-place-mutation)
   - [Explicit Copy](#explicit-copy)
 
@@ -37,7 +37,7 @@ S.obj({ key: schema }) // is the same as S.object().prop('key', schema)
 S.arr()                // replace S.array()
 S.arr(schema)          // is the same as S.array().items(schema)
 S.str                  // replace S.string()
-S.double                  // replace S.doubleber()
+S.double               // replace S.number()
 S.int                  // replace S.integer()
 S.bool                 // replace S.boolean()
 
@@ -279,7 +279,7 @@ When a schema object is passed into another schema object, e.g. `S.obj.prop()`, 
   }
 ```
 
-## Performant
+## Efficient
 ### In-Place Mutation
 In contrast to fluent-schema, this library updates schema objects in-place, and requires developers to [lock](#lock--copy) shared schemas to prevent errors. Allocations only happen in the following scenarios:
 1. A new schema is created from `S`.

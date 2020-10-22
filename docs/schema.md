@@ -17,6 +17,7 @@ This document assumes prior knowledge of [JSON Schema](https://json-schema.org/u
   - [Required By Default](#required-by-default)
   - [Set Once Only](#set-once-only)
   - [Lock & Copy](#lock--copy)
+  - [Explicit Keys](#explicit-keys)
 - [Efficient](#efficient)
   - [In-Place Mutation](#in-place-mutation)
   - [Explicit Copy](#explicit-copy)
@@ -278,6 +279,9 @@ When a schema object is passed into another schema object, e.g. `S.obj.prop()`, 
     }).toThrow('is locked')
   }
 ```
+
+### Explicit Keys
+By default object schemas will have `additionalProperties` set to false to disallow any undefined keys slipping through validation. The only exception is when `S.obj()` is transformed into JSON schema without any property defined. In such case, `additionalProperties` is set to true to allow random keys, since an empty object as parameter does not make sense.
 
 ## Efficient
 ### In-Place Mutation

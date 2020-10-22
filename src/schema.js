@@ -433,6 +433,15 @@ class ObjectSchema extends BaseSchema {
     return ret
   }
 
+  __jsonSchema () {
+    const ret = super.__jsonSchema()
+    if (Object.keys(this.objectSchemas).length === 0) {
+      // Allow any key if no key is defined.
+      ret.additionalProperties = true
+    }
+    return ret
+  }
+
   c2jShape ({
     addToContainer = true,
     container,

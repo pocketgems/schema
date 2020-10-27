@@ -31,6 +31,7 @@ class ValidationError extends Error {
     super(`Validation Error: ${name}`)
     this.badValue = badValue
     this.validationErrors = errors
+    // istanbul ignore else
     if (process.env.NODE_ENV === 'localhost') {
       console.error(errors)
     }

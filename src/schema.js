@@ -535,14 +535,13 @@ class ArraySchema extends BaseSchema {
   }
 
   c2jShape ({ defaultName, addToContainer = true, container }) {
-    const { retName, retShape, retDoc } = super.c2jShape({
-      defaultName: defaultName + 'List',
-      container,
-      addToContainer: false // Don't add yet, since member is not setup.
-    })
-
     const ret = this.itemsSchema.c2jShape({
       defaultName, container
+    })
+    const { retName, retShape, retDoc } = super.c2jShape({
+      defaultName: ret.retName + 'List',
+      container,
+      addToContainer: false // Don't add yet, since member is not setup.
     })
     const shapeName = ret.retName
     const shapeDoc = ret.retDoc

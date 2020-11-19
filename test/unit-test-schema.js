@@ -336,6 +336,8 @@ class NewFeatureTest extends BaseTest {
     // ex1 end
     expect(s.jsonSchema()).toStrictEqual(fs.valueOf())
     expect(s.copy().jsonSchema()).toStrictEqual(fs.valueOf())
+    s.lock()
+    expect(s.__isLocked).toBe(true)
 
     expect(() => {
       S.map.items()

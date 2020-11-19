@@ -695,6 +695,11 @@ class MapSchema extends ArraySchema {
     return this
   }
 
+  lock () {
+    this.__finalizeSchema()
+    return super.lock()
+  }
+
   __finalizeSchema () {
     assert.ok((this.objectSchema.__getProp('properties') || {}).value,
       'Must have a value schema')

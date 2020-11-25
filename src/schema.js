@@ -150,7 +150,7 @@ class BaseSchema {
    */
   title (t) {
     assert.ok(typeof t === 'string', 'Title must be a string.')
-    return this.__setProp('title', t)
+    return this.__setProp('title', t, { allowOverride: true })
   }
 
   /**

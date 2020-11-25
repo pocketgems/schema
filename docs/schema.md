@@ -23,13 +23,13 @@ This document assumes prior knowledge of [JSON Schema](https://json-schema.org/u
   - [Explicit Copy](#explicit-copy)
 
 
-## Convenient
+# Convenient
 To start using the schema library, import the module first
 ```javascript
 const S = require('../../sharedlib/src/schema')
 ```
 
-### Shorthand Syntax
+## Shorthand Syntax
 This library replaces a few fluent-schema APIs with shorter syntax.
 ```javascript
 // Create schema object
@@ -79,7 +79,7 @@ Multiple calls to `prop()` can be simplified to one single call on `props()`. `p
 
 Similarly, `S.arr().items(schema)` can be simplified to `S.arr(schema)`.
 
-### Long Descriptions
+## Long Descriptions
 Long descriptions can should use multiline Node strings. These strings will be joined by a space character to form the final description. Keep in mind that Markdown is supported in descriptions rendered to Swagger.
 ```javascript <!-- embed:../test/unit-test-schema.js:scope:testLongDescription -->
   testLongDescription () {
@@ -92,7 +92,7 @@ into **one** string`)
   }
 ```
 
-### Long Examples
+## Long Examples
 Examples can be provided via `examples()` API. Parameter is an array of examples. For a long example, an array of strings can be provided and they will be joined by a space character.
 ```javascript <!-- embed:../test/unit-test-schema.js:scope:testLongExamples -->
   testLongExamples () {
@@ -116,7 +116,7 @@ Examples can be provided via `examples()` API. Parameter is an array of examples
   }
 ```
 
-### Map Schema
+## Map Schema
 The Map schema contains a collection of key-value pairs. This feature replaces a few deprecated JSON Schemas features mentioned [here](#deprecated-json-schema-features). Instead of writing the following schema:
 ```javascript <!-- embed:../test/unit-test-schema.js:section:ex0 start:ex1 start -->
     const fs = S.arr(S.obj({
@@ -137,12 +137,12 @@ The map shorthand can be used with less typing:
 
 NOTE: This schema produces cleaner client SDK interfaces than using the more complex array of objects schema.
 
-### Common Schemas
+## Common Schemas
 In addition to the schema constructors, this library also exports a collection of commonly used schemas. These schemas are available in the `S.SCHEMAS` property. For example,
 - S.SCHEMAS.UUID: A schema for UUIDs.
 - S.SCHEMAS.STR_ANDU: A schema for alphanumeric strings with dashes and underscores.
 
-### Getting JSON Schema
+## Getting JSON Schema
 Detect a Todea Schema object by checking `isTodeaSchema`. Extract JSON schema by calling `jsonSchema()` on a Todea Schema.
 ```javascript
 if (schema.isTodeaSchema) {
@@ -150,14 +150,14 @@ if (schema.isTodeaSchema) {
 }
 ```
 
-### Getting C2J Shape Schema
+## Getting C2J Shape Schema
 The `c2jShape()` API exports C2J Shape schemas. It must be used in conjunction with the [AWS C2J Exporter](aws-c2j.md).
 
-### Fluent-schema compatible
+## Fluent-schema compatible
 For libraries that accepts a fluent-schema object as the parameter (e.g. fastify), you may pass Todea Schema objects instead. Todea Schema implements fluent-schema's `isFluentSchema` and `valueOf()` APIs to achieve compatibility.
 
-## Secure
-### Deprecated JSON Schema Features
+# Secure
+## Deprecated JSON Schema Features
 This library deprecates many advanced / niche features from the JSON Schema spec in favor of correctness.
 
 * BaseSchema
@@ -185,14 +185,14 @@ This library deprecates many advanced / niche features from the JSON Schema spec
 
   Use [MapSchema](#map-schema) instead.
 
-### Required By Default
+## Required By Default
 Every property is required by default to prevent accidental omission of data. Call `optional()` to make a property optional.
 ```javascript
 S.str // required
 S.str.optional() // Optional
 ```
 
-### Set Once Only
+## Set Once Only
 Most critical schema properties can be set only once. Additional attempts to update an already set property result in exceptions.
 ```javascript <!-- embed:../test/unit-test-schema.js:scope:testPropOverwrite -->
   testPropOverwrite () {
@@ -234,7 +234,7 @@ For ObjectSchema objects, keys passed to `S.obj()`, `prop()` and `props()` must 
 
 Metadata properties such as `desc()` can be set more than once. When they are set the second time, a copy of the schema is created, updated and returned. Read more on this behavior in [in-place mutation](#in-place-mutation).
 
-### Lock & Copy
+## Lock & Copy
 Since schemas in this library are [mutated in-place](#in-place-mutation), when a schema is shared by multiple code path, modifications made in one code path will be observed by another. To avoid this problem, a lock can be placed on the schema.
 ```javascript
 const schema = S.str
@@ -280,11 +280,11 @@ When a schema object is passed into another schema object, e.g. `S.obj.prop()`, 
   }
 ```
 
-### Explicit Keys
+## Explicit Keys
 By default object schemas will have `additionalProperties` set to false to disallow any undefined keys slipping through validation. The only exception is when `S.obj()` is transformed into JSON schema without any property defined. In such case, `additionalProperties` is set to true to allow random keys, since an empty object as parameter does not make sense.
 
-## Efficient
-### In-Place Mutation
+# Efficient
+## In-Place Mutation
 In contrast to fluent-schema, this library updates schema objects in-place, and requires developers to [lock](#lock--copy) shared schemas to prevent errors. Allocations only happen in the following scenarios:
 1. A new schema is created from `S`.
 2. A metadata property is [overwritten](#set-once-only).
@@ -304,7 +304,7 @@ const myBool = S.bool.desc('aa').title('something')
 const newSchema = myBool.desc('bb')
 ```
 
-### Explicit Copy
+## Explicit Copy
 To avoid hidden costs while using this library, schema copies are generally only made when explicitly requested. Explicit copy works because nested schema objects are [locked as they become nested](#lock--copy). Copies of objects are only created when
 - Todea Schema object is copied using `copy()`
 - JSON Schema is requested using `jsonSchema()`

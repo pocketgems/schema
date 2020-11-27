@@ -14,7 +14,7 @@ function toStringID (str) {
     return str
   }
   return str.split(/[^a-zA-Z0-9]/).map(s => {
-    return s.replace(/^./, s[0].toUpperCase())
+    return s.replace(/^./, (s[0] || '').toUpperCase())
   }).join('')
 }
 

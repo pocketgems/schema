@@ -519,6 +519,7 @@ into **one** string`)
     expect(S.__private.toStringID('abc')).toBe('Abc')
     expect(S.__private.toStringID('ab c-a_b12c')).toBe('AbCAB12c')
     expect(S.__private.toStringID('a-b12-aa ff')).toBe('AB12AaFf')
+    expect(S.__private.toStringID('alpha (bravo) char')).toBe('AlphaBravoChar')
   }
 }
 

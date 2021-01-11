@@ -34,11 +34,16 @@ class ProxySchema {
       string: 'str',
       integer: 'int',
       number: 'double',
-      boolean: 'bool'
+      boolean: 'bool',
+      media: 'media'
     }
     for (const [left, right] of Object.entries(classMapping)) {
       this[left] = (...args) => {
-        let tempA = this.fs[left](...args)
+        let tempA = (
+          left === 'media'
+            ? this.fs.string
+            : this.fs[left]
+        )(...args)
         if (left === 'object') {
           tempA = tempA.additionalProperties(false)
         }
@@ -63,7 +68,9 @@ class ProxySchema {
       maxLength: 'max',
       minimum: 'min',
       maximum: 'max',
-      description: 'desc'
+      description: 'desc',
+      contentEncoding: 'encoding',
+      contentMediaType: 'type'
     }
     for (const [left, right] of Object.entries(propMapping)) {
       this[left] = (...args) => {
@@ -210,6 +217,12 @@ class FeatureParityTest extends BaseTest {
   testBoolean () {
     P.boolean().verify()
     P.boolean().title('abc').description('1123').verify()
+  }
+
+  testMedia () {
+    P.media().verify()
+    P.media().contentEncoding('base64').contentMediaType('application/zip')
+      .verify()
   }
 }
 

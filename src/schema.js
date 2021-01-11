@@ -765,6 +765,40 @@ class MapSchema extends ArraySchema {
   }
 }
 
+class MediaSchema extends StringSchema {
+  type (t) {
+    this.__setProp('contentMediaType', t)
+    return this
+  }
+
+  encoding (e) {
+    assert(['binary', 'base64'].includes(e),
+      'Encoding must be binary or base64')
+    this.__setProp('contentEncoding', e)
+    return this
+  }
+
+  c2jShape ({
+    addToContainer = true,
+    container,
+    defaultName
+  }) {
+    const { retName, retShape, retDoc } = super.c2jShape({
+      addToContainer: false,
+      container,
+      defaultName
+    })
+    const encoding = this.__getProp('contentEncoding')
+    if (encoding) {
+      retShape.type = 'blob'
+    }
+    if (addToContainer) {
+      container.addShape(retName, retShape)
+    }
+    return { retName, retShape, retDoc }
+  }
+}
+
 /**
  * The S object to be exported.
  * Noteworthily, it is safe to deprecate certain schema types simply by
@@ -808,6 +842,10 @@ class S {
    */
   static get map () { return new MapSchema() }
 
+  /**
+   * Get a new MediaSchema object.
+   */
+  static get media () { return new MediaSchema() }
   /**
    * Lock all schemas in a dictionary (in-place).
    * @param {Object<Schema>} schemas a map of schema values

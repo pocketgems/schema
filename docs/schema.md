@@ -8,6 +8,7 @@ This document assumes prior knowledge of [JSON Schema](https://json-schema.org/u
   - [Long Descriptions](#long-descriptions)
   - [Long Examples](#long-examples)
   - [Map Schema](#map-schema)
+  - [Media Schema](#media-schema)
   - [Common Schemas](#common-schemas)
   - [Getting JSON Schema](#getting-json-schema)
   - [Getting C2J Shape Schema](#getting-c2j-shape-schema)
@@ -136,6 +137,25 @@ The map shorthand can be used with less typing:
 ```
 
 NOTE: This schema produces cleaner client SDK interfaces than using the more complex array of objects schema.
+
+## Media Schema
+Media schema can be used for rich content like `.tar` files, images and custom data blobs. Content type and content encoding can be specified using `type('application/tar')` and `encoding('base64')` respectively.
+
+For example
+```javascript
+const s = S.media.type('application/image').encoding('base64')
+```
+
+After receiving the data, it should decoded accordingly.
+```javascript
+const decoded = Base64.decode(data)
+```
+
+Alternatively the data can be forwarded to a library that handled encoded data
+```javascript
+const zip = (new JSZip()).loadAsync(data, { base64: true })
+```
+
 
 ## Common Schemas
 In addition to the schema constructors, this library also exports a collection of commonly used schemas. These schemas are available in the `S.SCHEMAS` property. For example,

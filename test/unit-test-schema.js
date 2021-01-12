@@ -96,6 +96,14 @@ class ProxySchema {
     )
   }
 
+  patternProp (name, value) {
+    name = name.toString()
+    return new ProxySchema(
+      this.fs.patternProperties({ [name]: value.fs }),
+      this.s.patternProps({ [name]: value.s })
+    )
+  }
+
   verify () {
     expect(this.fs.valueOf()).toStrictEqual(this.s.jsonSchema())
   }
@@ -181,6 +189,12 @@ class FeatureParityTest extends BaseTest {
       .examples(['aaa', 'bbb'])
       .description('1123')
       .prop('a', P.string())
+      .verify()
+  }
+
+  testObjectPattern () {
+    P.object()
+      .patternProp(/abc/, P.string())
       .verify()
   }
 
@@ -384,6 +398,10 @@ class NewFeatureTest extends BaseTest {
 
     const arr = S.arr(obj)
     expect(arr.jsonSchema()).toStrictEqual(arr.copy().jsonSchema())
+
+    const patternObj = S.obj().patternProps({ [/xyz.*/.toString()]: str })
+    expect(patternObj.jsonSchema())
+      .toStrictEqual(patternObj.copy().jsonSchema())
   }
 
   testCopyIsolation () {

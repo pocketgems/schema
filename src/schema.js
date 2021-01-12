@@ -393,6 +393,7 @@ class ObjectSchema extends BaseSchema {
   constructor (props = {}) {
     super()
     this.objectSchemas = {}
+    this.patternSchemas = {}
     this.__setProp('additionalProperties', false)
     this.props(props)
   }
@@ -406,7 +407,6 @@ class ObjectSchema extends BaseSchema {
     assert.ok(!this.__isLocked,
       'Schema is locked. Call copy then further modify the schema')
     assert.ok(typeof name === 'string', 'Property name must be strings.')
-
     const properties = this.__setDefaultProp('properties', {})
     assert.ok(!Object.prototype.hasOwnProperty.call(properties, name),
       `Property with key ${name} already exists`)
@@ -431,15 +431,33 @@ class ObjectSchema extends BaseSchema {
     return this
   }
 
+  /**
+   * A mapping of propertyProperties to schemas.
+   * @param {Object} props Keys must be regex, values must be schema
+   */
+  patternProps (props) {
+    for (const [name, schema] of Object.entries(props)) {
+      const properties = this.__setDefaultProp('patternProperties', {})
+      assert.ok(!Object.prototype.hasOwnProperty.call(properties, name),
+        `Pattern ${name} already exists`)
+
+      this.patternSchemas[name] = schema.lock()
+      properties[name] = schema.__jsonSchema()
+    }
+    return this
+  }
+
   copy () {
     const ret = super.copy()
     Object.assign(ret.objectSchemas, this.objectSchemas)
+    Object.assign(ret.patternSchemas, this.patternSchemas)
     return ret
   }
 
   __jsonSchema () {
     const ret = super.__jsonSchema()
-    if (Object.keys(this.objectSchemas).length === 0) {
+    if (Object.keys(this.objectSchemas).length === 0 &&
+        Object.keys(this.patternSchemas).length === 0) {
       // Allow any key if no key is defined.
       ret.additionalProperties = true
     }
@@ -452,6 +470,8 @@ class ObjectSchema extends BaseSchema {
     defaultName,
     location
   }) {
+    assert(Object.keys(this.patternSchemas).length === 0,
+      'C2J schema does not support pattern properties.')
     const { retName, retShape, retDoc } = super.c2jShape({
       addToContainer: false, // Don't add yet, members and required not setup.
       container,

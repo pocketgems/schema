@@ -5,6 +5,7 @@ This document assumes prior knowledge of [JSON Schema](https://json-schema.org/u
 
 - [Convenient](#convenient)
   - [Shorthand Syntax](#shorthand-syntax)
+  - [Pattern Properties](#pattern-properties)
   - [Long Descriptions](#long-descriptions)
   - [Long Examples](#long-examples)
   - [Map Schema](#map-schema)
@@ -79,6 +80,12 @@ Multiple calls to `prop()` can be simplified to one single call on `props()`. `p
 ```
 
 Similarly, `S.arr().items(schema)` can be simplified to `S.arr(schema)`.
+
+## Pattern Properties
+Occasionally, object schema's keys are programatically generated. In such cases, it may not be feasible to specify every property possible. Instead you may use a pattern to indicate a group of similar properties along with the schema appropriate for these properties, via the `patternProps` method. For example,
+```javascript <!-- embed:../test/unit-test-aws-c2j.js:section:pattern obj example start:pattern obj example end -->
+      S.obj().patternProps({ [/xyz-.*/.toString()]: S.str })
+```
 
 ## Long Descriptions
 Long descriptions can should use multiline Node strings. These strings will be joined by a space character to form the final description. Keep in mind that Markdown is supported in descriptions rendered to Swagger.
@@ -200,7 +207,6 @@ This library deprecates many advanced / niche features from the JSON Schema spec
 * ObjectSchema
   - AdditionalProperties
   - Dependencies
-  - PatternProperties
   - PropertyNames
 
   Use [MapSchema](#map-schema) instead.

@@ -4,21 +4,6 @@ let ajv // only defined if needed
 const deepcopy = require('rfdc')() // cspell:disable-line
 
 /**
- * Any non alphanumerical characters are stripped, the immediate next character
- * is capitalized.
- * @param {String} str
- * @return A string ID, AKA an upper camel case string.
- */
-function toStringID (str) {
-  if (!str || str.length === 0) {
-    return str
-  }
-  return str.split(/[^a-zA-Z0-9]/).map(s => {
-    return s.replace(/^./, (s[0] || '').toUpperCase())
-  }).join('')
-}
-
-/**
  * Thrown if a compiled schema validator is asked to validate an invalid value.
  */
 class ValidationError extends Error {
@@ -127,7 +112,7 @@ class BaseSchema {
    * @param {String} name Name of a property
    * @return The value associated with name.
    */
-  __getProp (name) {
+  getProp (name) {
     return this.__properties[name]
   }
 
@@ -141,7 +126,7 @@ class BaseSchema {
     if (!Object.prototype.hasOwnProperty.call(this.__properties, name)) {
       this.__setProp(name, defaultValue)
     }
-    return this.__getProp(name)
+    return this.getProp(name)
   }
 
   /**
@@ -194,7 +179,7 @@ class BaseSchema {
    * See {@link optional}.
    */
   get required () {
-    return !this.__getProp('optional')
+    return !this.getProp('optional')
   }
 
   /**
@@ -227,9 +212,15 @@ class BaseSchema {
   }
 
   /**
-   * @return JSON Schema without the schema version keyword at the root level.
+   * The visitable in a visitor pattern. Used for exporting schema.
+   * @param {Exporter} visitor a schema exporter. @see JSONSchemaExporter
    */
-  __jsonSchema () {
+  // istanbul ignore next
+  export (visitor) {
+    throw new Error('Subclass must override')
+  }
+
+  properties () {
     return this.__properties
   }
 
@@ -237,9 +228,8 @@ class BaseSchema {
    * @return JSON Schema with the schema version keyword at the root level.
    */
   jsonSchema () {
-    const ret = deepcopy(this.__jsonSchema())
-    ret.$schema = 'http://json-schema.org/draft-07/schema#'
-    return ret
+    const exporter = new JSONSchemaExporter()
+    return exporter.export(this)
   }
 
   /**
@@ -282,56 +272,6 @@ class BaseSchema {
    */
   getValidatorAndJSONSchema (name, compiler) {
     return this.compile(name, compiler, true)
-  }
-  /**
-   * @typedef {Object} C2JSchemaReturnValue
-   * @property {String} retName The actual name used for the shape schema
-   * @property {Object} retShape The shape schema
-   * @property {String} retDoc The documentation / description for the shape
-   *   schema
-   */
-
-  /**
-   * Generates C2J shape schema. Derives a name for the generated shape schema
-   * based on the 'title' property then fallback to defaultName. Nested schema
-   * uses the current shape schema name as prefix / scope. Adds the current
-   * shape schema to the container if requested. Nested shape schemas are
-   * always added to the container.
-   *
-   * @param {Object} param
-   * @param {Object} [param.defaultName] A tentative name for the shape, if
-   *   it is added to the container. Also a prefix for nested shapes
-   * @param {String} [param.addToContainer=true] If the shape schema should be
-   *   added to the container. Nested shapes will always be added to the
-   *   container.
-   * @param {ContainerObject} param.container A container object that
-   *   implements addShape(name, shapeSchema)
-   * @param {String} [param.location] The location for the schema, e.g. header
-   *   queryString, etc...
-   * @return {C2JSchemaReturnValue} Metadata of the shape along with the shape.
-   */
-  c2jShape ({ defaultName = '', container, addToContainer = true }) {
-    const ret = {
-      type: this.constructor.C2J_SCHEMA_TYPE
-    }
-    const max = this.__getProp(this.constructor.MAX_PROP_NAME)
-    if (max !== undefined) {
-      ret.max = max
-    }
-    const min = this.__getProp(this.constructor.MIN_PROP_NAME)
-    if (min !== undefined) {
-      ret.min = min
-    }
-
-    const name = toStringID(this.__getProp('title') || defaultName)
-    if (addToContainer) {
-      container.addShape(name, ret)
-    }
-    return {
-      retName: name,
-      retShape: ret,
-      retDoc: this.__getProp('description')
-    }
   }
 
   /**
@@ -394,7 +334,6 @@ class ObjectSchema extends BaseSchema {
     super()
     this.objectSchemas = {}
     this.patternSchemas = {}
-    this.__setProp('additionalProperties', false)
     this.props(props)
   }
 
@@ -412,7 +351,7 @@ class ObjectSchema extends BaseSchema {
       `Property with key ${name} already exists`)
 
     this.objectSchemas[name] = schema.lock()
-    properties[name] = schema.__jsonSchema()
+    properties[name] = schema.properties()
     if (schema.required) {
       this.__setDefaultProp('required', []).push(name)
     }
@@ -442,7 +381,7 @@ class ObjectSchema extends BaseSchema {
         `Pattern ${name} already exists`)
 
       this.patternSchemas[name] = schema.lock()
-      properties[name] = schema.__jsonSchema()
+      properties[name] = schema.properties()
     }
     return this
   }
@@ -454,64 +393,17 @@ class ObjectSchema extends BaseSchema {
     return ret
   }
 
-  __jsonSchema () {
-    const ret = super.__jsonSchema()
-    if (Object.keys(this.objectSchemas).length === 0 &&
-        Object.keys(this.patternSchemas).length === 0) {
-      // Allow any key if no key is defined.
-      ret.additionalProperties = true
-    }
+  properties () {
+    const ret = super.properties()
+    // Allow any key if no key is defined.
+    const hasProperty = Object.keys(this.objectSchemas).length > 0 ||
+      Object.keys(this.patternSchemas).length > 0
+    ret.additionalProperties = !hasProperty
     return ret
   }
 
-  c2jShape ({
-    addToContainer = true,
-    container,
-    defaultName,
-    location
-  }) {
-    assert(Object.keys(this.patternSchemas).length === 0,
-      'C2J schema does not support pattern properties.')
-    const { retName, retShape, retDoc } = super.c2jShape({
-      addToContainer: false, // Don't add yet, members and required not setup.
-      container,
-      defaultName
-    })
-    const members = {}
-    const required = []
-    for (const [name, p] of Object.entries(this.objectSchemas)) {
-      const camelName = toStringID(name)
-      const ret = p.c2jShape({
-        defaultName: retName + camelName,
-        container
-      })
-      const shapeName = ret.retName
-      const shapeDoc = ret.retDoc
-      if (p.required) {
-        required.push(camelName)
-      }
-      const shapeSpec = {
-        shape: shapeName,
-        locationName: name
-      }
-      if (location) {
-        shapeSpec.location = location
-      }
-      if (shapeDoc) {
-        shapeSpec.documentation = shapeDoc
-      }
-      members[camelName] = shapeSpec
-    }
-
-    retShape.members = members
-    if (required.length !== 0) {
-      retShape.required = required
-    }
-
-    if (addToContainer) {
-      container.addShape(retName, retShape)
-    }
-    return { retName, retShape, retDoc }
+  export (visitor) {
+    return visitor.exportObject(this)
   }
 }
 
@@ -544,7 +436,7 @@ class ArraySchema extends BaseSchema {
   items (items) {
     assert.ok(!this.itemsSchema, 'Items is already set.')
     this.itemsSchema = items.lock()
-    this.__setProp('items', items.__jsonSchema())
+    this.__setProp('items', items.properties())
     return this
   }
 
@@ -554,27 +446,8 @@ class ArraySchema extends BaseSchema {
     return ret
   }
 
-  c2jShape ({ defaultName, addToContainer = true, container }) {
-    const ret = this.itemsSchema.c2jShape({
-      defaultName, container
-    })
-    const { retName, retShape, retDoc } = super.c2jShape({
-      defaultName: ret.retName + 'List',
-      container,
-      addToContainer: false // Don't add yet, since member is not setup.
-    })
-    const shapeName = ret.retName
-    const shapeDoc = ret.retDoc
-    const shapeSpec = { shape: shapeName }
-    if (retDoc) {
-      shapeSpec.documentation = shapeDoc
-    }
-
-    retShape.member = shapeSpec
-    if (addToContainer) {
-      container.addShape(retName, retShape)
-    }
-    return { retName, retShape, retDoc }
+  export (visitor) {
+    return visitor.exportArray(this)
   }
 }
 
@@ -595,6 +468,10 @@ class NumberSchema extends BaseSchema {
   __validateRangeProperty (name, val) {
     assert.ok(Number.isFinite(val), `${name} must be a number`)
   }
+
+  export (visitor) {
+    return visitor.exportNumber(this)
+  }
 }
 
 /**
@@ -611,6 +488,10 @@ class IntegerSchema extends NumberSchema {
    */
   __validateRangeProperty (name, val) {
     assert.ok(Number.isInteger(val), `${name} must be an integer`)
+  }
+
+  export (visitor) {
+    return visitor.exportInteger(this)
   }
 }
 
@@ -647,26 +528,8 @@ class StringSchema extends BaseSchema {
     return this.__setProp('pattern', pattern)
   }
 
-  c2jShape ({
-    addToContainer = true,
-    container,
-    defaultName
-  }) {
-    const ret = super.c2jShape({
-      addToContainer: false,
-      container,
-      defaultName
-    })
-    for (const prop of ['pattern', 'enum']) {
-      const val = this.__getProp(prop)
-      if (val) {
-        ret.retShape[prop] = val
-      }
-    }
-    if (addToContainer) {
-      container.addShape(ret.retName, ret.retShape)
-    }
-    return ret
+  export (visitor) {
+    return visitor.exportString(this)
   }
 }
 
@@ -676,6 +539,10 @@ class StringSchema extends BaseSchema {
 class BooleanSchema extends BaseSchema {
   static JSON_SCHEMA_TYPE = 'boolean'
   static C2J_SCHEMA_TYPE = 'boolean'
+
+  export (visitor) {
+    return visitor.exportBoolean(this)
+  }
 }
 
 /**
@@ -721,67 +588,25 @@ class MapSchema extends ArraySchema {
   }
 
   __finalizeSchema () {
-    assert.ok((this.objectSchema.__getProp('properties') || {}).value,
+    assert.ok((this.objectSchema.getProp('properties') || {}).value,
       'Must have a value schema')
-    if (!this.objectSchema.__getProp('properties').key) {
+    if (!this.objectSchema.getProp('properties').key) {
       this.objectSchema.prop('key', S.str)
     }
-    if (!this.__getProp('items')) {
+    if (!this.getProp('items')) {
       super.items(this.objectSchema) // items on this is disabled.
     }
   }
 
-  __jsonSchema () {
+  export (visitor) {
     this.__finalizeSchema()
-    return super.__jsonSchema()
+    return visitor.exportMap(this)
   }
 
   copy () {
     const ret = super.copy()
     ret.objectSchema = this.objectSchema.copy()
     return ret
-  }
-
-  c2jShape ({
-    addToContainer = true,
-    container,
-    defaultName
-  }) {
-    this.__finalizeSchema()
-
-    // To C2J MapSchema is just map, no Array of Objects. Here we bypass super
-    // and go directly to BaseSchema for common functionalities.
-    const { retName, retShape, retDoc } = BaseSchema.prototype.c2jShape.call(
-      this,
-      {
-        defaultName: defaultName,
-        container,
-        addToContainer: false
-      }
-    )
-
-    for (const propName of ['key', 'value']) {
-      const propDefaultName = defaultName + toStringID(propName)
-      const ret = this.objectSchema.objectSchemas[propName]
-        .c2jShape({
-          defaultName: propDefaultName,
-          container
-        })
-      const shapeName = ret.retName
-      const shapeDoc = ret.retDoc
-      const shapeSpec = {
-        shape: shapeName,
-        locationName: propName
-      }
-      if (shapeDoc) {
-        shapeSpec.documentation = shapeDoc
-      }
-      retShape[propName] = shapeSpec
-    }
-    if (addToContainer) {
-      container.addShape(retName, retShape)
-    }
-    return { retName, retShape, retDoc }
   }
 }
 
@@ -798,24 +623,39 @@ class MediaSchema extends StringSchema {
     return this
   }
 
-  c2jShape ({
-    addToContainer = true,
-    container,
-    defaultName
-  }) {
-    const { retName, retShape, retDoc } = super.c2jShape({
-      addToContainer: false,
-      container,
-      defaultName
-    })
-    const encoding = this.__getProp('contentEncoding')
-    if (encoding) {
-      retShape.type = 'blob'
+  export (visitor) {
+    return visitor.exportMedia(this)
+  }
+}
+
+class JSONSchemaExporter {
+  constructor () {
+    const methods = [
+      'exportString',
+      'exportInteger',
+      'exportNumber',
+      'exportObject',
+      'exportArray',
+      'exportBoolean',
+      'exportMap',
+      'exportMedia'
+    ]
+
+    for (const method of methods) {
+      Object.defineProperty(this, method, {
+        get: () => {
+          return (schema) => {
+            return schema.properties()
+          }
+        }
+      })
     }
-    if (addToContainer) {
-      container.addShape(retName, retShape)
-    }
-    return { retName, retShape, retDoc }
+  }
+
+  export (schema) {
+    const ret = deepcopy(schema.export(this))
+    ret.$schema = 'http://json-schema.org/draft-07/schema#'
+    return ret
   }
 }
 
@@ -893,13 +733,6 @@ class S {
 
   /** Thrown if validation fails. */
   static ValidationError = ValidationError
-}
-
-// istanbul ignore else
-if (process.env.NODE_ENV === 'localhost') {
-  S.__private = {
-    toStringID
-  }
 }
 
 module.exports = S

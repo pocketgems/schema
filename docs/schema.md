@@ -12,7 +12,7 @@ This document assumes prior knowledge of [JSON Schema](https://json-schema.org/u
   - [Media Schema](#media-schema)
   - [Common Schemas](#common-schemas)
   - [Getting JSON Schema](#getting-json-schema)
-  - [Getting C2J Shape Schema](#getting-c2j-shape-schema)
+  - [Export schemas](#export-schemas)
   - [Fluent-schema compatible](#fluent-schema-compatible)
 - [Secure](#secure)
   - [Deprecated JSON Schema Features](#deprecated-json-schema-features)
@@ -177,8 +177,25 @@ if (schema.isTodeaSchema) {
 }
 ```
 
-## Getting C2J Shape Schema
-The `c2jShape()` API exports C2J Shape schemas. It must be used in conjunction with the [AWS C2J Exporter](aws-c2j.md).
+## Export schemas
+Todea schema can be extended to support exporting to custom schemas. It can be done via the `export` method which uses a visitor pattern. A custom exporter needs to implement the follow interface:
+```javascript
+class SchemaExporter {
+  exportString (schema) {}
+  exportInteger (schema) {}
+  exportNumber (schema) {}
+  exportObject (schema) {}
+  exportArray (schema) {}
+  exportBoolean (schema) {}
+  exportMap (schema) {}
+  exportMedia (schema) {}
+}
+```
+
+Then use the exporter like
+```javascript
+const exportedSchema = S.obj().export(new SchemaExporter())
+```
 
 ## Fluent-schema compatible
 For libraries that accepts a fluent-schema object as the parameter (e.g. fastify), you may pass Todea Schema objects instead. Todea Schema implements fluent-schema's `isFluentSchema` and `valueOf()` APIs to achieve compatibility.

@@ -725,7 +725,8 @@ class S {
     STR_ANDU: S.str.desc('Only hyphens, underscores, letters and numbers are permitted.')
       .pattern(/^[-_a-zA-Z0-9]+$/),
     // oversimplified, quick regex to check that a string looks like an email
-    STR_EMAIL: S.str.pattern(/^.+@.+$/).desc('an e-mail address').lock(),
+    STR_EMAIL: S.str.pattern(/^[^A-Z ]+@.+$/)
+      .desc('an e-mail address (lowercase only)').lock(),
     // cspell: disable-next-line
     STR_TODEA_BASE32: S.str.pattern(/^[ABCDEFGHJLMNPQRSTUVWXYZ023456789]+$/)
       .desc('Only select digits and uppercase ASCII characters')

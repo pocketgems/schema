@@ -1,16 +1,18 @@
 const path = require('path')
 
+const { LicenseWebpackPlugin } = require('license-webpack-plugin')
 const webpack = require('webpack')
 
 module.exports = {
   entry: './src/schema.js',
   output: {
-    filename: 'schema.js',
+    filename: 'schema.cjs',
     path: path.resolve(__dirname, 'dist'),
     libraryTarget: 'commonjs2'
   },
   mode: 'production',
   target: 'node',
+  devtool: 'eval-source-map',
   module: {
     rules: [
       {
@@ -31,6 +33,10 @@ module.exports = {
       'process.env': {
         NODE_ENV: JSON.stringify('webpack')
       }
+    }),
+    new LicenseWebpackPlugin({
+      outputFilename: 'schema-licenses.txt',
+      unacceptableLicenseTest: (licenseType) => (licenseType === 'GPL')
     })
   ]
 }

@@ -617,8 +617,8 @@ class MediaSchema extends StringSchema {
   }
 
   encoding (e) {
-    assert(['binary', 'base64'].includes(e),
-      'Encoding must be binary or base64')
+    assert(['binary', 'base64', 'utf-8'].includes(e),
+      'Encoding must be binary, base64 or utf-8')
     this.__setProp('contentEncoding', e)
     return this
   }

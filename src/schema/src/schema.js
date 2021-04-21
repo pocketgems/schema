@@ -659,6 +659,10 @@ class JSONSchemaExporter {
   }
 }
 
+const STR_TODEA_BASE32 = (new StringSchema())
+  .pattern(/^[ABCDEFGHJLMNPQRSTUVWXYZ023456789]+$/)
+  .desc('Only select digits and uppercase ASCII characters')
+
 /**
  * The S object to be exported.
  * Noteworthily, it is safe to deprecate certain schema types simply by
@@ -728,8 +732,9 @@ class S {
     STR_EMAIL: S.str.pattern(/^[^A-Z ]+@.+$/)
       .desc('an e-mail address (lowercase only)').lock(),
     // cspell: disable-next-line
-    STR_TODEA_BASE32: S.str.pattern(/^[ABCDEFGHJLMNPQRSTUVWXYZ023456789]+$/)
-      .desc('Only select digits and uppercase ASCII characters')
+    STR_TODEA_BASE32,
+    STR_USER_ACCOUNT_ID: STR_TODEA_BASE32.copy().min(10).max(10)
+      .desc('the ID assigned to a user by the Todea userid service')
   })
 
   /** Thrown if validation fails. */

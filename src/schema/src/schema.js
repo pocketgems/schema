@@ -248,7 +248,7 @@ class BaseSchema {
     assert.ok(name, 'name is required')
     if (!compiler) {
       if (!ajv) {
-        ajv = new (require('ajv'))({ allErrors: true })
+        ajv = new (require('ajv'))({ allErrors: true, useDefaults: true })
       }
       compiler = ajv
     }

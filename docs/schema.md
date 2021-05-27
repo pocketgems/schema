@@ -36,7 +36,7 @@ This library replaces a few fluent-schema APIs with shorter syntax.
 ```javascript
 // Create schema object
 S.obj()                // replace S.object()
-S.obj({ key: schema }) // is the same as S.object().prop('key', schema)
+S.obj({ key: schema }) // is the same as S.object().props({ key: schema })
 S.arr()                // replace S.array()
 S.arr(schema)          // is the same as S.array().items(schema)
 S.str                  // replace S.string()
@@ -45,7 +45,7 @@ S.int                  // replace S.integer()
 S.bool                 // replace S.boolean()
 
 // Common API for all schema objects
-S.[*]()
+S.str() // Or any other schema object
   .desc('A more details description') // replace description()
 
 // min / max are polymorphic

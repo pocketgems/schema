@@ -317,6 +317,19 @@ class NewFeatureTest extends BaseTest {
       .verify()
   }
 
+  testObjectAdditionalPropsOkay () {
+    // empty object => additional properties allowed
+    expect(S.obj().jsonSchema().additionalProperties).toBe(true)
+
+    // non-empty object => additional properties NOT allowed (by default)
+    const nonEmptyObj = S.obj().prop('x', S.str)
+    expect(nonEmptyObj.jsonSchema().additionalProperties).toBe(false)
+
+    // non-empty allowed additional props if explicitly allowed
+    nonEmptyObj.additionalProperties = true
+    expect(nonEmptyObj.jsonSchema().additionalProperties).toBe(true)
+  }
+
   testRequiredByDefault () {
     expect(S.obj().required).toBe(true)
     expect(S.obj()

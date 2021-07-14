@@ -394,7 +394,15 @@ S.obj(S.lock({
 ```
 
 ## Explicit Keys
-By default object schemas will have `additionalProperties` set to false to disallow any undefined keys slipping through validation. The only exception is when `S.obj()` is transformed into JSON schema without any property defined. In such case, `additionalProperties` is set to true to allow random keys, since an empty object as parameter does not make sense.
+By default object schemas will have `additionalProperties` set to false to disallow any undefined keys slipping through validation. There are two exceptions:
+
+  1. When `S.obj()` is transformed into a JSON schema without any property
+     defined. In this case, `additionalProperties` is set to true to allow all
+     keys, since an empty object as parameter does not make sense.
+  1. When `S.obj().additionalProperties` is explicitly set to `true`. This
+     should be used very sparingly - only when the API is being called by an
+     external source that we cannot control, and whose parameters list may grow
+     without warning (this is not typical, even for external sources).
 
 # Efficient
 ## In-Place Mutation

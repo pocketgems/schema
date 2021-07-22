@@ -476,7 +476,7 @@ class NewFeatureTest extends BaseTest {
     const arr = S.arr(obj)
     expect(arr.jsonSchema()).toStrictEqual(arr.copy().jsonSchema())
 
-    const patternObj = S.obj().patternProps({ [/xyz.*/.toString()]: str })
+    const patternObj = S.obj().patternProps({ '^xyz.*$': str })
     expect(patternObj.jsonSchema())
       .toStrictEqual(patternObj.copy().jsonSchema())
   }
@@ -621,6 +621,15 @@ into **one** string`)
     expect(() => x.assertValid(3)).toThrow(S.ValidationError)
     expect(() => x.assertValid('3')).toThrow('Validation Error: testSchema')
     expect(x.jsonSchema).toEqual(schema.jsonSchema())
+  }
+
+  testPatternPropsValidation () {
+    const regexStr = '^xyz-.*$'
+    const schema = S.obj().patternProps({ [regexStr]: S.str })
+    const validateOrDie = schema.compile('testSchema', ajv, false)
+    expect(() => validateOrDie({ bad: 'key' })).toThrow(S.ValidationError)
+    validateOrDie({ 'xyz-okay': 'no problem', 'xyz-also-fine': '' })
+    expect(() => validateOrDie({ 'xyz-key-ok': 3 })).toThrow(S.ValidationError)
   }
 }
 

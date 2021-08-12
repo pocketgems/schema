@@ -295,8 +295,8 @@ class ValidationTest extends BaseTest {
     }).toThrow(/must be an array/)
 
     expect(() => {
-      S.str.enum(['a'])
-    }).toThrow(/contain at least 2 values/)
+      S.str.enum([])
+    }).toThrow(/contain at least 1 value/)
 
     expect(() => {
       S.str.min(0.2)

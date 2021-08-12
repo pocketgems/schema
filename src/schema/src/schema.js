@@ -544,7 +544,7 @@ class StringSchema extends BaseSchema {
    */
   enum (validValues) {
     assert.ok(Array.isArray(validValues), 'Enum must be an array.')
-    assert.ok(validValues.length >= 2, 'Enum must contain at least 2 values.')
+    assert.ok(validValues.length >= 1, 'Enum must contain at least 1 value.')
     return this.__setProp('enum', validValues)
   }
 

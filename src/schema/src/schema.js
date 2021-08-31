@@ -263,21 +263,21 @@ class BaseSchema {
     }
     this.lock()
     const jsonSchema = this.jsonSchema()
-    const validate = compiler.compile(this.jsonSchema())
-    const validateOrDie = v => {
+    const validate = compiler.compile(jsonSchema)
+    const assertValid = v => {
       if (!validate(v)) {
         throw new ValidationError(name, v, validate.errors)
       }
     }
     if (returnSchemaToo) {
-      return { jsonSchema, validateOrDie }
+      return { jsonSchema, assertValid }
     }
-    return validateOrDie
+    return assertValid
   }
 
   /**
    * See {@link compile}.
-   * @returns {Object} contains jsonSchema and validateOrDie
+   * @returns {Object} contains jsonSchema and assertValid
    */
   getValidatorAndJSONSchema (name, compiler) {
     return this.compile(name, compiler, true)

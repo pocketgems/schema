@@ -10,6 +10,7 @@ This document assumes prior knowledge of [JSON Schema](https://json-schema.org/u
   - [Long Examples](#long-examples)
   - [Map Schema](#map-schema)
   - [Media Schema](#media-schema)
+  - [Validating Data](#validating-data)
   - [Common Schemas](#common-schemas)
   - [Getting JSON Schema](#getting-json-schema)
   - [Export schemas](#export-schemas)
@@ -163,9 +164,36 @@ Alternatively the data can be forwarded to a library that handled encoded data
 const zip = (new JSZip()).loadAsync(data, { base64: true })
 ```
 
+## Validating Data
+Schema is compiled into a validator that can be used to efficiently validate
+data. When compiling a schema, a name must be provided. The name should
+uniquely identify a schema, so a validation failures can be quickly linked back
+to the source.
+```javascript
+const s = S.str
+const validator = s.compile('inputValidation')
+validator('123')
+expect(validator('123')).toThrow()
+```
+
+Schema library uses AJV as the json validator compiler. You can provide your
+custom JSON schema validator too.
+```javascript
+const customValidator = s.compile('inputValidation', new AJV())
+```
+
+The `compile` function may optionally return both the JSON schema object and a
+validator by passing the truthy value as the 3rd parameter.
+```javascript
+const { jsonSchema, assertValid } = s.compile('inputValidation', undefined /* to use the default compiler */, true)
+assertValid('123')
+expect(assertValid('123')).toThrow()
+```
 
 ## Common Schemas
-In addition to the schema constructors, this library also exports a collection of commonly used schemas. These schemas are available in the `S.SCHEMAS` property. For example,
+In addition to the schema constructors, this library also exports a collection
+of commonly used schemas. These schemas are available in the `S.SCHEMAS`
+property. For example:
 - S.SCHEMAS.UUID: A schema for UUIDs.
 - S.SCHEMAS.STR_ANDU: A schema for alphanumeric strings with dashes and underscores.
 

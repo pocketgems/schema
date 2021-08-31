@@ -578,15 +578,15 @@ into **one** string`)
 
   testCompile () {
     const schema = S.str.min(2)
-    const validateOrDie = schema.compile('testSchema', ajv, false)
+    const assertValid = schema.compile('testSchema', ajv, false)
     expect(schema.__isLocked).toBe(true)
-    expect(() => validateOrDie(3)).toThrow(S.ValidationError)
-    expect(() => validateOrDie('3')).toThrow('Validation Error: testSchema')
+    expect(() => assertValid(3)).toThrow(S.ValidationError)
+    expect(() => assertValid('3')).toThrow('Validation Error: testSchema')
 
     // can compile with the built-in ajv too
     const x = schema.getValidatorAndJSONSchema('testSchema')
-    expect(() => x.validateOrDie(3)).toThrow(S.ValidationError)
-    expect(() => x.validateOrDie('3')).toThrow('Validation Error: testSchema')
+    expect(() => x.assertValid(3)).toThrow(S.ValidationError)
+    expect(() => x.assertValid('3')).toThrow('Validation Error: testSchema')
     expect(x.jsonSchema).toEqual(schema.jsonSchema())
   }
 }

@@ -10,12 +10,14 @@ class ValidationError extends Error {
   /**
    * @param {string} name a user-provided name describing the schema
    * @param {*} badValue the value which did not validate
-   * @param {object} errors how badValue failed to conform to the schema
+   * @param {Object} errors how badValue failed to conform to the schema
+   * @param {Object} expectedSchema The JSON schema used in schema validation
    */
-  constructor (name, badValue, errors) {
+  constructor (name, badValue, errors, expectedSchema) {
     super(`Validation Error: ${name}`)
     this.badValue = badValue
     this.validationErrors = errors
+    this.expectedSchema = expectedSchema
     // istanbul ignore else
     if (['localhost', 'webpack'].includes(process.env.NODE_ENV)) {
       console.error(JSON.stringify(errors, null, 2))
@@ -266,7 +268,7 @@ class BaseSchema {
     const validate = compiler.compile(jsonSchema)
     const assertValid = v => {
       if (!validate(v)) {
-        throw new ValidationError(name, v, validate.errors)
+        throw new ValidationError(name, v, validate.errors, jsonSchema)
       }
     }
     if (returnSchemaToo) {

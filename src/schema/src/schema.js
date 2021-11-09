@@ -767,6 +767,16 @@ class S {
   }
 
   /**
+   * Sets all schemas as optional (in-place).
+   * @param {Object<Schema>} schemas a map of schema values
+   * @returns the input map of schema values
+   */
+  static optional (schemas) {
+    Object.values(schemas).forEach(x => x.optional())
+    return schemas
+  }
+
+  /**
    * Common schemas.
    */
   static SCHEMAS = S.lock({

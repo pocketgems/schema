@@ -263,6 +263,27 @@ S.str // required
 S.str.optional() // Optional
 ```
 
+A helper method, `S.optional()` is provided to simplify setting multiple properties as optional.
+
+so this:
+
+```javascript
+S.obj({
+  int: S.int.optional(),
+  bool: S.bool.optional(),
+  str: S.str.optional()
+})
+```
+
+becomes this:
+```javscript
+S.obj(S.optional({
+  int: S.int,
+  bool: S.bool,
+  str: S.str
+}))
+```
+
 ## Set Once Only
 Most critical schema properties can be set only once. Additional attempts to update an already set property result in exceptions.
 ```javascript <!-- embed:../test/unit-test-schema.js:scope:testPropOverwrite -->
@@ -349,6 +370,27 @@ When a schema object is passed into another schema object, e.g. `S.obj.prop()`, 
       c.min(1)
     }).toThrow('is locked')
   }
+```
+
+A helper method, `S.lock()` is provided to simplify locking multiple properties.
+
+so this:
+
+```javascript
+S.obj({
+  int: S.int.lock(),
+  bool: S.bool.lock(),
+  str: S.str.lock()
+})
+```
+
+becomes this:
+```javscript
+S.obj(S.lock({
+  int: S.int,
+  bool: S.bool,
+  str: S.str
+}))
 ```
 
 ## Explicit Keys

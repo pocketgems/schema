@@ -371,6 +371,26 @@ class NewFeatureTest extends BaseTest {
     expect(nestedSchemas.map.objectSchema.objectSchemas.value.properties().description).toBe('test')
   }
 
+  /**
+   * Verify S.optional sets all passed schemas to optional()
+   */
+  testOptional () {
+    const result = S.optional({
+      int: S.int,
+      obj: S.obj({ key: S.str }),
+      arr: S.arr(S.int),
+      bool: S.bool,
+      map: S.map.key(S.str).value(S.str)
+    })
+    Object.values(result)
+      .forEach(schema => expect(schema.properties().optional).toBe(true))
+
+    // optional should not be applied to nested schemas
+    expect(result.obj.objectSchemas.key.properties().optional).not.toBe(true)
+    expect(result.arr.itemsSchema.properties().optional).not.toBe(true)
+    expect(result.map.objectSchema.objectSchemas.value.properties().optional).not.toBe(true)
+  }
+
   testArray () {
     P.array().maxItems(2).minItems(1).verify()
   }

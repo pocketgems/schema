@@ -418,11 +418,8 @@ class ObjectSchema extends BaseSchema {
     // Allow any key if no key is defined.
     const hasProperty = Object.keys(this.objectSchemas).length > 0 ||
       Object.keys(this.patternSchemas).length > 0
-    if (this.additionalProperties) {
-      ret.additionalProperties = true
-    } else {
-      ret.additionalProperties = !hasProperty
-    }
+    const hasAdditionalProperties = !!this.additionalProperties // make it bool
+    ret.additionalProperties = !hasProperty || hasAdditionalProperties
     return ret
   }
 

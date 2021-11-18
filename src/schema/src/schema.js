@@ -399,9 +399,16 @@ class ObjectSchema extends BaseSchema {
       const properties = this.__setDefaultProp('patternProperties', {})
       assert.ok(!Object.prototype.hasOwnProperty.call(properties, name),
         `Pattern ${name} already exists`)
+      let anchoredName = name
+      if (name[0] !== '^') {
+        anchoredName = '^' + name
+      }
+      if (name[name.length - 1] !== '$') {
+        anchoredName += '$'
+      }
 
-      this.patternSchemas[name] = schema.lock()
-      properties[name] = schema.properties()
+      this.patternSchemas[anchoredName] = schema.lock()
+      properties[anchoredName] = schema.properties()
     }
     return this
   }

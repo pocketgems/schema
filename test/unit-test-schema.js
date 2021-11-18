@@ -98,6 +98,12 @@ class ProxySchema {
 
   patternProp (name, value) {
     name = name.toString()
+    if (name[0] !== '^') {
+      name = '^' + name
+    }
+    if (name[name.length - 1] !== '$') {
+      name += '$'
+    }
     return new ProxySchema(
       this.fs.patternProperties({ [name]: value.fs }),
       this.s.patternProps({ [name]: value.s })
@@ -194,7 +200,7 @@ class FeatureParityTest extends BaseTest {
 
   testObjectPattern () {
     P.object()
-      .patternProp(/abc/, P.string())
+      .patternProp('abc', P.string())
       .verify()
   }
 
@@ -624,12 +630,29 @@ into **one** string`)
   }
 
   testPatternPropsValidation () {
-    const regexStr = '^xyz-.*$'
-    const schema = S.obj().patternProps({ [regexStr]: S.str })
-    const validateOrDie = schema.compile('testSchema', ajv, false)
-    expect(() => validateOrDie({ bad: 'key' })).toThrow(S.ValidationError)
-    validateOrDie({ 'xyz-okay': 'no problem', 'xyz-also-fine': '' })
-    expect(() => validateOrDie({ 'xyz-key-ok': 3 })).toThrow(S.ValidationError)
+    function check (regexStr) {
+      const schema = S.obj().patternProps({ [regexStr]: S.str })
+      const assertValid = schema.compile('testSchema', ajv, false)
+      expect(() => assertValid({ bad: 'key' })).toThrow(S.ValidationError)
+      assertValid({ 'xyz-okay': 'no problem', 'xyz-also-fine': '' })
+      expect(() => assertValid({ 'xyz-key-ok': 3 })).toThrow(S.ValidationError)
+    }
+    // anchors are added if not present so all these are equivalent
+    check('^xyz-.*$')
+    check('^xyz-.*')
+    check('xyz-.*$')
+    check('xyz-.*')
+
+    // can emulate no anchors (substring search) if that's really what we want
+    const schema = S.obj().patternProps({ '.*xyz.*': S.str })
+    const assertValid = schema.compile('substrTest', ajv, false)
+    expect(() => assertValid({ bad: 'key' })).toThrow(S.ValidationError)
+    assertValid({
+      'xyz-prefix-okay': 'prefix',
+      'middle-xyz-okay': 'middle',
+      'suffix-okay-xyz': 'suffix',
+      xyz: 'only this'
+    })
   }
 }
 

@@ -83,14 +83,15 @@ Multiple calls to `prop()` can be simplified to one single call on `props()`. `p
 Similarly, `S.arr().items(schema)` can be simplified to `S.arr(schema)`.
 
 ## Pattern Properties
-Occasionally, object schema's keys are programatically generated. In such cases, it may not be feasible to specify every property possible. Instead you may use a pattern to indicate a group of similar properties along with the schema appropriate for these properties, via the `patternProps` method. For example,
+You may allow an object to contain any keys matching a given pattern via the
+`patternProps` method. For example,
 ```javascript <!-- embed:../test/unit-test-aws-c2j.js:section:pattern obj example start:pattern obj example end -->
-      S.obj().patternProps({ '^xyz-.*$': S.str })
+      S.obj().patternProps({ 'xyz-.*': S.str })
 ```
 
-It is important to include the start and end anchors (`^` and `$`) to only
-allow properties which exactly match the regex. Omitting these will allow any
-properties which contain the substring expression.
+Patterns have start and end anchors (`^` and `$`) automatically added to only
+allow properties which exactly match the regex. To find a substring (or prefix
+or suffix) you can use start and/or end your pattern with the `.*` pattern.
 
 ## Long Descriptions
 Long descriptions can should use multiline Node strings. These strings will be joined by a space character to form the final description. Keep in mind that Markdown is supported in descriptions rendered to Swagger.

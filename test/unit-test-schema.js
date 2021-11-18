@@ -215,7 +215,7 @@ class FeatureParityTest extends BaseTest {
   testString () {
     P.string().verify()
     P.string().minLength(1).maxLength(2).verify()
-    P.string().pattern('1231').verify()
+    P.string().pattern('^1231$').verify()
     P.string().enum(['a', 'b']).examples(['aaa', 'bbb']).verify()
     P.string().title('abc').description('1123').verify()
   }

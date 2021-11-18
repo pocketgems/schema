@@ -399,14 +399,7 @@ class ObjectSchema extends BaseSchema {
       const properties = this.__setDefaultProp('patternProperties', {})
       assert.ok(!Object.prototype.hasOwnProperty.call(properties, name),
         `Pattern ${name} already exists`)
-      let anchoredName = name
-      if (name[0] !== '^') {
-        anchoredName = '^' + name
-      }
-      if (name[name.length - 1] !== '$') {
-        anchoredName += '$'
-      }
-
+      const anchoredName = getAnchoredPattern(name)
       this.patternSchemas[anchoredName] = schema.lock()
       properties[anchoredName] = schema.properties()
     }
@@ -568,7 +561,8 @@ class StringSchema extends BaseSchema {
       pattern = pattern.source
     }
     assert.ok(typeof pattern === 'string', 'Pattern must be a string')
-    return this.__setProp('pattern', pattern)
+    const anchoredPattern = getAnchoredPattern(pattern)
+    return this.__setProp('pattern', anchoredPattern)
   }
 
   export (visitor) {
@@ -714,7 +708,7 @@ class JSONSchemaExporter {
 }
 
 const STR_TODEA_BASE32 = (new StringSchema())
-  .pattern(/^[ABCDEFGHJLMNPQRSTUVWXYZ023456789]+$/)
+  .pattern(/[ABCDEFGHJLMNPQRSTUVWXYZ023456789]+/)
   .desc('Only select digits and uppercase ASCII characters')
 
 /**
@@ -803,6 +797,17 @@ class S {
 
   /** Thrown if validation fails. */
   static ValidationError = ValidationError
+}
+
+function getAnchoredPattern (pattern) {
+  let anchoredName = pattern
+  if (pattern[0] !== '^') {
+    anchoredName = '^' + pattern
+  }
+  if (pattern[pattern.length - 1] !== '$') {
+    anchoredName += '$'
+  }
+  return anchoredName
 }
 
 module.exports = S

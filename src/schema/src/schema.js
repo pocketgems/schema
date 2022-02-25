@@ -35,11 +35,6 @@ class BaseSchema {
   static JSON_SCHEMA_TYPE
 
   /**
-   * The C2J schema type
-   */
-  static C2J_SCHEMA_TYPE
-
-  /**
    * The max* property name.
    */
   static MAX_PROP_NAME
@@ -341,7 +336,6 @@ class BaseSchema {
  */
 class ObjectSchema extends BaseSchema {
   static JSON_SCHEMA_TYPE = 'object'
-  static C2J_SCHEMA_TYPE = 'structure'
   static MAX_PROP_NAME = 'maxProperties'
   static MIN_PROP_NAME = 'minProperties'
 
@@ -441,7 +435,6 @@ class ObjectSchema extends BaseSchema {
  */
 class ArraySchema extends BaseSchema {
   static JSON_SCHEMA_TYPE = 'array'
-  static C2J_SCHEMA_TYPE = 'list'
   static MAX_PROP_NAME = 'maxItems'
   static MIN_PROP_NAME = 'minItems'
 
@@ -492,7 +485,6 @@ class ArraySchema extends BaseSchema {
  */
 class NumberSchema extends BaseSchema {
   static JSON_SCHEMA_TYPE = 'number'
-  static C2J_SCHEMA_TYPE = 'double'
   static MAX_PROP_NAME = 'maximum'
   static MIN_PROP_NAME = 'minimum'
 
@@ -515,7 +507,6 @@ class NumberSchema extends BaseSchema {
  */
 class IntegerSchema extends NumberSchema {
   static JSON_SCHEMA_TYPE = 'integer'
-  static C2J_SCHEMA_TYPE = 'integer'
 
   /**
    * Validate input to min/max.
@@ -536,7 +527,6 @@ class IntegerSchema extends NumberSchema {
  */
 class StringSchema extends BaseSchema {
   static JSON_SCHEMA_TYPE = 'string'
-  static C2J_SCHEMA_TYPE = 'string'
   static MAX_PROP_NAME = 'maxLength'
   static MIN_PROP_NAME = 'minLength'
 
@@ -575,7 +565,6 @@ class StringSchema extends BaseSchema {
  */
 class BooleanSchema extends BaseSchema {
   static JSON_SCHEMA_TYPE = 'boolean'
-  static C2J_SCHEMA_TYPE = 'boolean'
 
   export (visitor) {
     return visitor.exportBoolean(this)
@@ -585,27 +574,26 @@ class BooleanSchema extends BaseSchema {
 /**
  * The MapSchema class.
  */
-class MapSchema extends ArraySchema {
-  static JSON_SCHEMA_TYPE = 'array'
-  static C2J_SCHEMA_TYPE = 'map'
-
+class MapSchema extends ObjectSchema {
   constructor () {
     super()
-    this.objectSchema = new ObjectSchema().min(2).max(2)
-  }
+    // deprecate obj methods
+    this.prop = undefined
+    this.props = undefined
+    this.patternProps = undefined
 
-  items (i) {
-    throw new Error('Map does not support Items')
+    this.finalized = false
+    this.keySchema = undefined
+    this.valueSchema = undefined
   }
 
   /**
-   * Set a key schema for the map.
-   * @param {StringSchema} key A StringSchema object for keys.
+   * Set a key pattern for the map.
+   * @param {String} keyPattern A pattern for keys
    */
-  key (key) {
-    assert.ok(key.constructor.JSON_SCHEMA_TYPE === 'string', 'Key must be strings')
-    assert.ok(key.required, 'key must be required')
-    this.objectSchema.prop('key', key)
+  keyPattern (pattern) {
+    this.keySchema = S.str.pattern(pattern).lock()
+    this.__tryFinalizeSchema()
     return this
   }
 
@@ -615,7 +603,8 @@ class MapSchema extends ArraySchema {
    */
   value (value) {
     assert.ok(value.required, 'value must be required')
-    this.objectSchema.prop('value', value)
+    this.valueSchema = value.lock()
+    this.__tryFinalizeSchema()
     return this
   }
 
@@ -625,13 +614,19 @@ class MapSchema extends ArraySchema {
   }
 
   __finalizeSchema () {
-    assert.ok((this.objectSchema.getProp('properties') || {}).value,
-      'Must have a value schema')
-    if (!this.objectSchema.getProp('properties').key) {
-      this.objectSchema.prop('key', S.str)
+    assert(this.valueSchema, 'Must have a value schema')
+    if (!this.keySchema) {
+      this.keySchema = S.str
     }
-    if (!this.getProp('items')) {
-      super.items(this.objectSchema) // items on this is disabled.
+    this.__tryFinalizeSchema()
+  }
+
+  __tryFinalizeSchema () {
+    if (this.keySchema && this.valueSchema && !this.finalized) {
+      this.finalized = true
+      super.patternProps({
+        [this.keySchema?.getProp('pattern') ?? '.*']: this.valueSchema
+      })
     }
   }
 
@@ -642,19 +637,19 @@ class MapSchema extends ArraySchema {
 
   copy () {
     const ret = super.copy()
-    ret.objectSchema = this.objectSchema.copy()
+    ret.finalized = this.finalized
+    ret.keySchema = this.keySchema.copy()
+    ret.valueSchema = this.valueSchema.copy()
     return ret
   }
 
   traverseSchema (callbackFn) {
     callbackFn(this)
-    const valueSchema = this.objectSchema.objectSchemas.value
     assert.ok(
-      valueSchema !== undefined,
+      this.valueSchema !== undefined,
       'Cannot traverse map before value schema is set'
     )
-
-    return valueSchema.traverseSchema(callbackFn)
+    return this.valueSchema.traverseSchema(callbackFn)
   }
 }
 

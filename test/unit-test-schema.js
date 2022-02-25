@@ -387,7 +387,7 @@ class NewFeatureTest extends BaseTest {
     expect(nestedSchemas.bool.properties().description).toBe('test')
     expect(nestedSchemas.map.properties().description).toBe('test')
     expect(nestedSchemas.arrNoSchema.properties().description).toBe('test')
-    expect(nestedSchemas.map.objectSchema.objectSchemas.value.properties().description).toBe('test')
+    expect(nestedSchemas.map.valueSchema.properties().description).toBe('test')
   }
 
   /**
@@ -399,7 +399,7 @@ class NewFeatureTest extends BaseTest {
       obj: S.obj({ key: S.str }),
       arr: S.arr(S.int),
       bool: S.bool,
-      map: S.map.key(S.str).value(S.str)
+      map: S.map.value(S.str)
     })
     Object.values(result)
       .forEach(schema => expect(schema.properties().optional).toBe(true))
@@ -407,7 +407,7 @@ class NewFeatureTest extends BaseTest {
     // optional should not be applied to nested schemas
     expect(result.obj.objectSchemas.key.properties().optional).not.toBe(true)
     expect(result.arr.itemsSchema.properties().optional).not.toBe(true)
-    expect(result.map.objectSchema.objectSchemas.value.properties().optional).not.toBe(true)
+    expect(result.map.valueSchema.properties().optional).not.toBe(true)
   }
 
   testArray () {
@@ -432,17 +432,13 @@ class NewFeatureTest extends BaseTest {
 
   testMap () {
     // ex0 start
-    const fs = S.arr(S.obj({
-      key: S.str.min(1).pattern('123123'),
-      value: S.arr().max(123).items(S.int)
+    const fs = S.obj().patternProps({
+      123123: S.arr().max(123).items(S.int).desc('desc 123')
     })
-      .max(2)
-      .min(2) // Limit object to contain only `key` and `value`
-    )
     // ex1 start
     const s = S.map
-      .key(S.str.min(1).pattern('123123'))
-      .value(S.arr().max(123).items(S.int))
+      .keyPattern('123123')
+      .value(S.arr().max(123).items(S.int).desc('desc 123'))
     // ex1 end
     expect(s.jsonSchema()).toStrictEqual(fs.valueOf())
     expect(s.copy().jsonSchema()).toStrictEqual(fs.valueOf())
@@ -450,22 +446,10 @@ class NewFeatureTest extends BaseTest {
     expect(s.__isLocked).toBe(true)
 
     expect(() => {
-      S.map.items()
-    }).toThrow(/Map does not support Items/)
-
-    expect(() => {
-      S.map.key(S.str.optional())
-    }).toThrow(/key must be required/)
-
-    expect(() => {
-      S.map.key(S.int)
-    }).toThrow(/Key must be strings/)
-
-    expect(() => {
       S.map.value(S.str.optional())
     }).toThrow(/value must be required/)
 
-    expect(S.map.value(S.str).jsonSchema().items.properties.key)
+    expect(S.map.value(S.str).jsonSchema().patternProperties['^.*$'])
       .toStrictEqual({ type: 'string' })
     expect(() => {
       S.map.jsonSchema()

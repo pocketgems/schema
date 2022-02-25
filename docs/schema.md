@@ -1,7 +1,16 @@
 # Schema Library <!-- omit in toc -->
-Todea Schema library allows developers to quickly construct [JSON Schema](https://json-schema.org/understanding-json-schema/reference/index.html) and [AWS C2J Shape Schema](aws-c2j.md) without managing large JSON objects directly. It implements a subset of [the JSON Schema specification](https://json-schema.org/understanding-json-schema/reference/index.html) and a [fluent-schema](https://github.com/fastify/fluent-schema) like API.
+Todea Schema library allows developers to quickly construct
+[JSON Schema](https://json-schema.org/understanding-json-schema/reference/index.html)
+and [AWS C2J Shape Schema](aws-c2j.md) without managing large JSON objects
+directly. It implements a subset of
+[the JSON Schema specification](https://json-schema.org/understanding-json-schema/reference/index.html)
+and a [fluent-schema](https://github.com/fastify/fluent-schema) like API.
 
-This document assumes prior knowledge of [JSON Schema](https://json-schema.org/understanding-json-schema/reference/index.html) and [fluent-schema API](https://github.com/fastify/fluent-schema) and will only discuss features unique to this library. Please familiarize yourself with the linked docs before continuing.
+This document assumes prior knowledge of
+[JSON Schema](https://json-schema.org/understanding-json-schema/reference/index.html)
+and [fluent-schema API](https://github.com/fastify/fluent-schema) and will only
+discuss features unique to this library. Please familiarize yourself with the
+linked docs before continuing.
 
 - [Convenient](#convenient)
   - [Shorthand Syntax](#shorthand-syntax)
@@ -46,7 +55,7 @@ S.int                  // replace S.integer()
 S.bool                 // replace S.boolean()
 
 // Common API for all schema objects
-S.str() // Or any other schema object
+S.str // Or any other schema object
   .desc('A more details description') // replace description()
 
 // min / max are polymorphic
@@ -57,7 +66,10 @@ S.double.max(0.5).min(0.2) // replace maximum() & minimum()
 S.int.max(2).min(1)     // replace maximum() & minimum()
 ```
 
-Multiple calls to `prop()` can be simplified to one single call on `props()`. `props()` takes an object as input. Keys in the input object must be strings and values must be schema objects. The `S.obj({})` syntax simplifies `S.obj().props({})` further.
+Multiple calls to `prop()` can be simplified to one single call on `props()`.
+`props()` takes an object as input. Keys in the input object must be strings
+and values must be schema objects. The `S.obj({})` syntax simplifies
+`S.obj().props({})` further.
 ```javascript <!-- embed:../test/unit-test-schema.js:scope:testProps -->
   testProps () {
     const prop = S.obj()
@@ -94,7 +106,9 @@ allow properties which exactly match the regex. To find a substring (or prefix
 or suffix) you can use start and/or end your pattern with the `.*` pattern.
 
 ## Long Descriptions
-Long descriptions can should use multiline Node strings. These strings will be joined by a space character to form the final description. Keep in mind that Markdown is supported in descriptions rendered to Swagger.
+Long descriptions can should use multiline Node strings. These strings will be
+joined by a space character to form the final description. Keep in mind that
+Markdown is supported in descriptions rendered to Swagger.
 ```javascript <!-- embed:../test/unit-test-schema.js:scope:testLongDescription -->
   testLongDescription () {
     const intWithDescription = S.int.desc(`
@@ -107,7 +121,9 @@ into **one** string`)
 ```
 
 ## Long Examples
-Examples can be provided via `examples()` API. Parameter is an array of examples. For a long example, an array of strings can be provided and they will be joined by a space character.
+Examples can be provided via `examples()` API. Parameter is an array of
+examples. For a long example, an array of strings can be provided and they will
+be joined by a space character.
 ```javascript <!-- embed:../test/unit-test-schema.js:scope:testLongExamples -->
   testLongExamples () {
     const intWithExamples = S.int
@@ -131,28 +147,27 @@ Examples can be provided via `examples()` API. Parameter is an array of examples
 ```
 
 ## Map Schema
-The Map schema contains a collection of key-value pairs. This feature replaces a few deprecated JSON Schemas features mentioned [here](#deprecated-json-schema-features). Instead of writing the following schema:
+The Map schema is a shorthand for Object schemas containing one pattern prop:
 ```javascript <!-- embed:../test/unit-test-schema.js:section:ex0 start:ex1 start -->
-    const fs = S.arr(S.obj({
-      key: S.str.min(1).pattern('123123'),
-      value: S.arr().max(123).items(S.int)
+    const fs = S.obj().patternProps({
+      123123: S.arr().max(123).items(S.int).desc('desc 123')
     })
-      .max(2)
-      .min(2) // Limit object to contain only `key` and `value`
-    )
 ```
 
-The map shorthand can be used with less typing:
+becomes:
 ```javascript <!-- embed:../test/unit-test-schema.js:section:ex1 start:ex1 end -->
     const s = S.map
-      .key(S.str.min(1).pattern('123123'))
-      .value(S.arr().max(123).items(S.int))
+      .keyPattern('123123')
+      .value(S.arr().max(123).items(S.int).desc('desc 123'))
 ```
 
-NOTE: This schema produces cleaner client SDK interfaces than using the more complex array of objects schema.
+NOTE: This schema produces cleaner client SDK interfaces via C2J schema
+exporter.
 
 ## Media Schema
-Media schema can be used for rich content like `.tar` files, images and custom data blobs. Content type and content encoding can be specified using `type('application/tar')` and `encoding('base64')` respectively.
+Media schema can be used for rich content like `.tar` files, images and custom
+data blobs. Content type and content encoding can be specified using
+`type('application/tar')` and `encoding('base64')` respectively.
 
 For example
 ```javascript
@@ -245,21 +260,20 @@ This library deprecates many advanced / niche features from the JSON Schema spec
 
   - Enum
 
-    The `enum()` API is only available for `S.str` schemas. There must exist 2 or more values as valid options for the schema. NOTE: This limitation is imposed by SDK generation tools.
+    The `enum()` API is only available for `S.str` schemas. There must exist at
+    least one valid option for the schema.
 
 * ArraySchema
-  - AdditionalItems
-  - TupleValidation
-  - UniqueItems
-
-  Use ObjectSchema or [MapSchema](#map-schema) instead.
+  - AdditionalItems - replace with `S.obj().patternProps({})`.
+  - TupleValidation - replace with `S.obj({})` where elements are allocated
+    unique keys.
+  - UniqueItems - replace with `S.obj({})` where elements are allocated unique
+    keys, and values are unique schemas.
 
 * ObjectSchema
-  - AdditionalProperties
-  - Dependencies
-  - PropertyNames
-
-  Use [MapSchema](#map-schema) instead.
+  - Dependencies - deprecated as dependency analysis at compile time is overly
+    complicated.
+  - PropertyNames - replace with `S.obj().patternProps({})` with one entry.
 
 ## Required By Default
 Every property is required by default to prevent accidental omission of data. Call `optional()` to make a property optional.
@@ -349,7 +363,7 @@ A locked schema object can be unlocked by copying; after copying further modific
 const newSchema = schema.copy().min(1)
 ```
 
-When a schema object is passed into another schema object, e.g. `S.obj.prop()`, `S.arr.items()` or `S.map.value()`, the ownership of the input schema object is transferred to the containing schema object. The input schema object is locked automatically, so further modifications to the nested schema objects are prohibited. This behavior allows the library to only [copy when explicitly requested](#explicit-copy).
+When a schema object is passed into another schema object, e.g. `S.obj.prop()` or `S.arr.items()`, the ownership of the input schema object is transferred to the containing schema object. The input schema object is locked automatically, so further modifications to the nested schema objects are prohibited. This behavior allows the library to only [copy when explicitly requested](#explicit-copy).
 ```javascript <!-- embed:../test/unit-test-schema.js:scope:testAutoLocking -->
   testAutoLocking () {
     const a = S.str
@@ -390,7 +404,7 @@ S.obj({
 ```
 
 becomes this:
-```javscript
+```javascript
 S.obj(S.lock({
   int: S.int,
   bool: S.bool,

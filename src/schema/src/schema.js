@@ -592,6 +592,7 @@ class MapSchema extends ObjectSchema {
    * @param {String} keyPattern A pattern for keys
    */
   keyPattern (pattern) {
+    assert(!this.keySchema, 'key pattern already set')
     this.keySchema = S.str.pattern(pattern).lock()
     this.__tryFinalizeSchema()
     return this
@@ -602,7 +603,8 @@ class MapSchema extends ObjectSchema {
    * @param {BaseSchema} value Any subclass of BaseSchema for the values of map
    */
   value (value) {
-    assert.ok(value.required, 'value must be required')
+    assert(!this.valueSchema, 'value schema already set')
+    assert(value.required, 'value must be required')
     this.valueSchema = value.lock()
     this.__tryFinalizeSchema()
     return this

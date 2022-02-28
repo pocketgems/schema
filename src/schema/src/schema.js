@@ -783,6 +783,8 @@ class S {
       .pattern(/^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$/),
     STR_ANDU: S.str.desc('Only hyphens, underscores, letters and numbers are permitted.')
       .pattern(/^[-_a-zA-Z0-9]+$/),
+    STR_DISPLAY_NAME: S.str.pattern('^(?! ).{1,40}[^ ]$')
+      .desc('Any title that would be visible in-app.'),
     // oversimplified, quick regex to check that a string looks like an email
     STR_EMAIL: S.str.pattern(/^[^A-Z ]+@.+$/)
       .desc('an e-mail address (lowercase only)').lock(),

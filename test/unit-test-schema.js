@@ -297,10 +297,6 @@ class ValidationTest extends BaseTest {
 
   testString () {
     expect(() => {
-      S.str.enum('oij')
-    }).toThrow(/must be an array/)
-
-    expect(() => {
       S.str.enum([])
     }).toThrow(/contain at least 1 value/)
 

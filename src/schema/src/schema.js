@@ -536,9 +536,9 @@ class StringSchema extends BaseSchema {
    *   be at least 2 valid values.
    */
   enum (validValues) {
-    assert.ok(Array.isArray(validValues), 'Enum must be an array.')
-    assert.ok(validValues.length >= 1, 'Enum must contain at least 1 value.')
-    return this.__setProp('enum', validValues)
+    const values = Array.isArray(validValues) ? validValues : [...arguments]
+    assert(values.length >= 1, 'Enum must contain at least 1 value.')
+    return this.__setProp('enum', values)
   }
 
   /**
@@ -550,7 +550,7 @@ class StringSchema extends BaseSchema {
     if (pattern instanceof RegExp) {
       pattern = pattern.source
     }
-    assert.ok(typeof pattern === 'string', 'Pattern must be a string')
+    assert(typeof pattern === 'string', 'Pattern must be a string')
     const anchoredPattern = getAnchoredPattern(pattern)
     return this.__setProp('pattern', anchoredPattern)
   }

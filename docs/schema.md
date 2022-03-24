@@ -19,6 +19,7 @@ linked docs before continuing.
   - [Long Examples](#long-examples)
   - [Map Schema](#map-schema)
   - [Media Schema](#media-schema)
+  - [Enumeration](#enumeration)
   - [Validating Data](#validating-data)
   - [Common Schemas](#common-schemas)
   - [Getting JSON Schema](#getting-json-schema)
@@ -182,6 +183,14 @@ const decoded = Base64.decode(data)
 Alternatively the data can be forwarded to a library that handled encoded data
 ```javascript
 const zip = (new JSZip()).loadAsync(data, { base64: true })
+```
+
+## Enumeration
+A string enumeration can be declared with `S.str.enum()`. It can take an array
+of strings as a parameter, or take a list of string parameters.
+```javascript
+S.str.enum('a', 'b')
+S.str.enum(Object.keys(someObject))
 ```
 
 ## Validating Data

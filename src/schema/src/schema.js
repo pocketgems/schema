@@ -363,6 +363,7 @@ class ObjectSchema extends BaseSchema {
     const properties = this.__setDefaultProp('properties', {})
     assert.ok(!Object.prototype.hasOwnProperty.call(properties, name),
       `Property with key ${name} already exists`)
+    assert.ok(schema !== undefined, `Property ${name} must define a schema`)
 
     this.objectSchemas[name] = schema.lock()
     properties[name] = schema.properties()

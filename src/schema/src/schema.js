@@ -161,6 +161,7 @@ class BaseSchema {
    * @param {*} d The default value.
    */
   default (d) {
+    assert(d !== undefined, 'Default value must be defined')
     Object.freeze(d)
     return this.__setProp('default', d)
   }
@@ -320,15 +321,6 @@ class BaseSchema {
     this.__validateRangeProperty(name, val)
     return this.__setProp(name, val)
   }
-
-  /**
-   * Traverses all nested schemas in current, executing a callback on each
-   * @param {function} callbackFn callback to execute for all schemas
-   * nested in this one
-   */
-  traverseSchema (callbackFn) {
-    callbackFn(this)
-  }
 }
 
 /**
@@ -421,14 +413,6 @@ class ObjectSchema extends BaseSchema {
   export (visitor) {
     return visitor.exportObject(this)
   }
-
-  traverseSchema (callbackFn) {
-    callbackFn(this)
-    const subSchemas = Object.values({ ...this.objectSchemas, ...this.patternSchemas })
-    for (const schema of subSchemas) {
-      schema.traverseSchema(callbackFn)
-    }
-  }
 }
 
 /**
@@ -471,13 +455,6 @@ class ArraySchema extends BaseSchema {
 
   export (visitor) {
     return visitor.exportArray(this)
-  }
-
-  traverseSchema (callbackFn) {
-    callbackFn(this)
-    if (this.itemsSchema !== undefined) {
-      this.itemsSchema.traverseSchema(callbackFn)
-    }
   }
 }
 
@@ -644,15 +621,6 @@ class MapSchema extends ObjectSchema {
     ret.keySchema = this.keySchema.copy()
     ret.valueSchema = this.valueSchema.copy()
     return ret
-  }
-
-  traverseSchema (callbackFn) {
-    callbackFn(this)
-    assert.ok(
-      this.valueSchema !== undefined,
-      'Cannot traverse map before value schema is set'
-    )
-    return this.valueSchema.traverseSchema(callbackFn)
   }
 }
 

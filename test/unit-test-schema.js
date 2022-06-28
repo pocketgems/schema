@@ -342,48 +342,24 @@ class NewFeatureTest extends BaseTest {
       .toStrictEqual(['a'])
   }
 
+  testUndefinedDefault () {
+    expect(() => S.obj().default(undefined)).toThrow()
+    expect(() => S.arr().default(undefined)).toThrow()
+    expect(() => S.int.default(undefined)).toThrow()
+    expect(() => S.str.default(undefined)).toThrow()
+    expect(() => S.bool.default(undefined)).toThrow()
+    expect(() => S.double.default(undefined)).toThrow()
+    expect(() => S.map.default(undefined)).toThrow()
+  }
+
   testHasDefault () {
     expect(S.int.hasDefault()).toBe(false)
     expect(S.int.default(3).hasDefault()).toBe(true)
-    expect(S.int.default(undefined).hasDefault()).toBe(true)
   }
 
   testGetDefault () {
     expect(S.int.getDefault()).toBe(undefined)
     expect(S.int.default(2).getDefault()).toBe(2)
-  }
-
-  testTraverseSchema () {
-    const callbackFn = (schema) => { schema.__properties.description = 'test' }
-    const schema = S.obj({
-      int: S.int,
-      bool: S.bool,
-      string: S.str,
-      number: S.double,
-      arr: S.arr(S.obj({
-        int: S.int,
-        bool: S.bool,
-        map: S.map.value(S.int),
-        arrNoSchema: S.arr()
-      }))
-    })
-
-    schema.traverseSchema(callbackFn)
-
-    expect(schema.properties().description).toBe('test')
-    let nestedSchemas = schema.objectSchemas
-    expect(nestedSchemas.int.properties().description).toBe('test')
-    expect(nestedSchemas.bool.properties().description).toBe('test')
-    expect(nestedSchemas.string.properties().description).toBe('test')
-    expect(nestedSchemas.number.properties().description).toBe('test')
-    expect(nestedSchemas.arr.properties().description).toBe('test')
-
-    nestedSchemas = nestedSchemas.arr.itemsSchema.objectSchemas
-    expect(nestedSchemas.int.properties().description).toBe('test')
-    expect(nestedSchemas.bool.properties().description).toBe('test')
-    expect(nestedSchemas.map.properties().description).toBe('test')
-    expect(nestedSchemas.arrNoSchema.properties().description).toBe('test')
-    expect(nestedSchemas.map.valueSchema.properties().description).toBe('test')
   }
 
   /**

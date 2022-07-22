@@ -25,6 +25,14 @@ class ValidationError extends Error {
   }
 }
 
+const INT32_MAX = Math.pow(2, 31) - 1
+const INT32_MIN = -Math.pow(2, 31)
+
+// javascript is limited in how it can represent >53 bit numbers
+// so 2^62 is naturally the best we can do
+const INT64_MAX = Math.pow(2, 62)
+const INT64_MIN = -Math.pow(2, 62)
+
 /**
  * The base schema object
  */
@@ -309,6 +317,8 @@ class BaseSchema {
   min (val) {
     const name = this.constructor.MIN_PROP_NAME
     this.__validateRangeProperty(name, val)
+    const max = this.getProp(this.constructor.MAX_PROP_NAME)
+    assert.ok(max === undefined || max >= val, 'min must be less than max')
     return this.__setProp(name, val)
   }
 
@@ -319,6 +329,8 @@ class BaseSchema {
   max (val) {
     const name = this.constructor.MAX_PROP_NAME
     this.__validateRangeProperty(name, val)
+    const min = this.getProp(this.constructor.MIN_PROP_NAME)
+    assert.ok(min === undefined || min <= val, 'max must be more than min')
     return this.__setProp(name, val)
   }
 }
@@ -475,6 +487,10 @@ class NumberSchema extends BaseSchema {
     assert.ok(Number.isFinite(val), `${name} must be a number`)
   }
 
+  asFloat () {
+    return this.__setProp('isFloat', true)
+  }
+
   export (visitor) {
     return visitor.exportNumber(this)
   }
@@ -493,6 +509,40 @@ class IntegerSchema extends NumberSchema {
    */
   __validateRangeProperty (name, val) {
     assert.ok(Number.isInteger(val), `${name} must be an integer`)
+  }
+
+  /**
+   * sets limit on how large max or min can be.
+   * Validates current min/max to ensure they work correctly
+   */
+  __setSafeRangeLimit (val) {
+    const max = this.getProp(this.constructor.MAX_PROP_NAME)
+    if (max === undefined) {
+      this.max(val)
+    } else {
+      assert.ok(max <= val, `max cannot exceed ${val}`)
+    }
+    const min = this.getProp(this.constructor.MIN_PROP_NAME)
+    if (min === undefined) {
+      this.min(-val)
+    } else {
+      assert.ok(min >= -val, `min must be larger than ${-val}`)
+    }
+    return this
+  }
+
+  /**
+   * applies range for Int32 values
+   */
+  asInt32 () {
+    return this.__setSafeRangeLimit(INT32_MAX)
+  }
+
+  /**
+   * applies range for int64 values
+   */
+  asInt64 () {
+    return this.__setSafeRangeLimit(INT64_MAX)
   }
 
   export (visitor) {
@@ -755,6 +805,14 @@ class S {
 
   /** Thrown if validation fails. */
   static ValidationError = ValidationError
+
+  static INT32_MAX = INT32_MAX
+
+  static INT32_MIN = INT32_MIN
+
+  static INT64_MAX = INT64_MAX
+
+  static INT64_MIN = INT64_MIN
 }
 
 function getAnchoredPattern (pattern) {

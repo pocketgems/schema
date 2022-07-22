@@ -310,6 +310,149 @@ class ValidationTest extends BaseTest {
   }
 }
 
+/**
+ * Validation for helper features
+ */
+class TypedNumberTest extends BaseTest {
+  testFloatCopy () {
+    const obj = S.obj({
+      float: S.int.asFloat()
+    })
+    obj.compile('float schema')
+    const copied = obj.copy()
+    expect(copied.objectSchemas.float.getProp('isFloat')).toBe(true)
+  }
+
+  /**
+   * Verify isFLoat keyword does not fail if not explicitly configured
+   * for ajv compiler
+   */
+  testFloatExplicitCompiler () {
+    const ajv = new (require('ajv'))({ allErrors: true, useDefaults: true })
+    const obj = S.obj({
+      float: S.int.asFloat()
+    })
+    const jsonSchema = obj.jsonSchema()
+    const validate = ajv.compile(jsonSchema)
+    expect(validate({ float: 2.0 })).toBe(true)
+  }
+
+  /**
+   * Verify safe range limit protects against setting min/max
+   * outside bounds of int32 and int64
+   */
+  testRangeValidation () {
+    let schema = S.int
+
+    schema = S.int.max(Math.pow(2, 64))
+    expect(() => schema.asInt64())
+      .toThrow('max cannot exceed 4611686018427388000')
+    schema = S.int.min(Math.pow(2, 64))
+    expect(() => schema.asInt64())
+      .toThrow('max must be more than min')
+
+    // check retroactive validation for 32
+    schema = S.int.max(S.INT32_MAX + 1)
+    expect(() => schema.asInt32()).toThrow('max cannot exceed 2147483647')
+    schema = S.int.min(S.INT32_MAX + 1)
+    expect(() => schema.asInt32()).toThrow('max must be more than min')
+
+    schema = S.int.asInt64()
+    expect(() => schema.min(Math.pow(2, 64)))
+      .toThrow('min must be less than max')
+
+    // check post validation for 32
+    schema = S.int.asInt32()
+    expect(() => schema.max(S.INT32_MAX + 1))
+      .toThrow('Property maximum is already set')
+    schema = S.int.asInt32()
+    expect(() => schema.min(S.INT32_MAX + 1))
+      .toThrow('min must be less than max')
+
+    schema = S.int.min(3).asInt64()
+    expect(schema.__properties.minimum).toEqual(3)
+    expect(schema.__properties.maximum).toEqual(S.INT64_MAX)
+  }
+
+  /**
+   * Verify application of default max/min for int32
+   */
+  testInt32Validation () {
+    const schema = S.obj({
+      explicitMax: S.int.max(64).asInt32(),
+      explicitMin: S.int.min(-64).asInt32(),
+      implicitRange: S.int.asInt32()
+    })
+    const validate = schema.compile('32 schema')
+    const getDefault = () => {
+      return {
+        explicitMax: 64,
+        explicitMin: -64,
+        implicitRange: S.INT32_MAX
+      }
+    }
+    let values = getDefault()
+    validate(getDefault())
+    values.implicitRange = S.INT64_MIN
+    validate(getDefault())
+
+    // check if explicit max is obeyed
+    values = getDefault()
+    values.explicitMax = 65
+    expect(() => validate(values)).toThrow()
+    // check if implicit min is obeyed
+    values.explicitMax = -S.INT32_MIN - 1
+    expect(() => validate(values)).toThrow()
+
+    // check if explicit min is obeyed
+    values = getDefault()
+    values.explicitMin = -65
+    expect(() => validate(values)).toThrow()
+    // check if implicit max is obeyed
+    values.explicitMin = S.INT32_MAX + 1
+    expect(() => validate(values)).toThrow()
+  }
+
+  /**
+   * Verify application of default max/min for int64
+   */
+  testInt64Validation () {
+    const schema = S.obj({
+      explicitMax: S.int.max(64).asInt64(),
+      explicitMin: S.int.min(-64).asInt64(),
+      implicitRange: S.int.asInt64()
+    })
+    const validate = schema.compile('64 schema')
+    const getDefault = () => {
+      return {
+        explicitMax: 64,
+        explicitMin: -64,
+        implicitRange: S.INT64_MAX
+      }
+    }
+    let values = getDefault()
+    validate(values)
+    values.implicitRange = S.INT64_MIN
+    validate(values)
+
+    // check if explicit max is obeyed
+    values = getDefault()
+    values.explicitMax = 65
+    expect(() => validate(values)).toThrow()
+    // check if implicit min is obeyed
+    values.explicitMax = -Math.pow(2, 64)
+    expect(() => validate(values)).toThrow()
+
+    // check if explicit min is obeyed
+    values = getDefault()
+    values.explicitMin = -65
+    expect(() => validate(values)).toThrow()
+    // check if implicit max is obeyed
+    values.explicitMin = Math.pow(2, 64)
+    expect(() => validate(values)).toThrow()
+  }
+}
+
 class NewFeatureTest extends BaseTest {
   testObject () {
     P.object()
@@ -612,4 +755,4 @@ into **one** string`)
   }
 }
 
-runTests(FeatureParityTest, ValidationTest, NewFeatureTest)
+runTests(FeatureParityTest, TypedNumberTest, ValidationTest, NewFeatureTest)

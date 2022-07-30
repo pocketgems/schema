@@ -316,7 +316,7 @@ class ValidationTest extends BaseTest {
 class TypedNumberTest extends BaseTest {
   testFloatCopy () {
     const obj = S.obj({
-      float: S.int.asFloat()
+      float: S.double.asFloat()
     })
     obj.compile('float schema')
     const copied = obj.copy()
@@ -330,7 +330,7 @@ class TypedNumberTest extends BaseTest {
   testFloatExplicitCompiler () {
     const ajv = new (require('ajv'))({ allErrors: true, useDefaults: true })
     const obj = S.obj({
-      float: S.int.asFloat()
+      float: S.double.asFloat()
     })
     const jsonSchema = obj.jsonSchema()
     const validate = ajv.compile(jsonSchema)

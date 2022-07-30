@@ -545,6 +545,8 @@ class IntegerSchema extends NumberSchema {
     return this.__setSafeRangeLimit(INT64_MAX)
   }
 
+  asFloat = undefined
+
   export (visitor) {
     return visitor.exportInteger(this)
   }

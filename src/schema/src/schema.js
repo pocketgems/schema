@@ -802,7 +802,11 @@ class S {
       .pattern(/^[-_a-zA-Z0-9]+$/),
     // oversimplified, quick regex to check that a string looks like an email
     STR_EMAIL: S.str.pattern(/^[^A-Z ]+@.+$/)
-      .desc('an e-mail address (lowercase only)').lock()
+      .desc('an e-mail address (lowercase only)').lock(),
+    TIMESTAMP: S.str
+      .pattern(/\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d{3}Z/)
+      .desc(`An UTC timestamp with millisecond precision, for example,
+        2021-02-15T20:15:59.321Z`)
   })
 
   /** Thrown if validation fails. */

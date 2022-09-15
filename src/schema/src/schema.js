@@ -806,7 +806,15 @@ class S {
     TIMESTAMP: S.str
       .pattern(/\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d{3}Z/)
       .desc(`An UTC timestamp with millisecond precision, for example,
-        2021-02-15T20:15:59.321Z`)
+        2021-02-15T20:15:59.321Z`),
+    TIMESTAMP_WITH_TZ: S.str
+      .pattern(/\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d(\.\d*)?([+-][0-2]\d:[0-5]\d|Z)/)
+      .desc(`Timestamp with time zone and optional millisecond precision,
+        for example,
+        2021-02-15T20:15:59Z,
+        2022-09-15T16:48:28.9097226Z,
+        2021-02-15T11:55:20-05:00,
+        2021-02-15T11:55:20.9097226+08:00`)
   })
 
   /** Thrown if validation fails. */

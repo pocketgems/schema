@@ -1,11 +1,11 @@
 const assert = require('assert')
 
+const { BaseTest, runTests } = require('@pocketgems/unit-test')
 const ajv = new (require('ajv'))({ allErrors: true })
 const FS = require('fluent-schema')
 
 const S = require('../src/schema')
-
-const { BaseTest, runTests } = require('./base-unit-test')
+const { expect } = require('@jest/globals')
 
 class ProxySchema {
   constructor (fs, s) {
@@ -483,6 +483,15 @@ class NewFeatureTest extends BaseTest {
       .required
     )
       .toStrictEqual(['a'])
+  }
+
+  testReadOnly () {
+    expect(S.obj().readOnly().jsonSchema().readOnly).toBe(true)
+    expect(S.obj().readOnly(false).jsonSchema().readOnly).toBe(false)
+  }
+
+  testEnumShorthand () {
+    expect(S.str.enum('a').jsonSchema()).toEqual(S.str.enum(['a']).jsonSchema())
   }
 
   testUndefinedDefault () {

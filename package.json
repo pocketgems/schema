@@ -1,0 +1,31 @@
+{
+  "name": "@pocketgems/schema",
+  "version": "0.0.1",
+  "main": "src/schema.js",
+  "license": "Apache-2.0",
+  "scripts": {
+    "webpack": "yarn; webpack --config webpack.config.js",
+    "setup": "yarn",
+    "debug": "./node_modules/nodemon/bin/nodemon.js --no-lazy --legacy-watch --watch ./src --watch ./example --watch ./test --inspect=9229 ./node_modules/jest/bin/jest.js --coverage --config=./jest.config.json --runInBand",
+    "test": "./node_modules/jest/bin/jest.js --coverage --config=./jest.config.json"
+  },
+  "files": [
+    "src/schema.js"
+  ],
+  "dependencies": {
+    "ajv": "^6.12.3",
+    "rfdc": "^1.1.4"
+  },
+  "devDependencies": {
+    "@pocketgems/unit-test": "^0.0.1",
+    "@babel/core": "^7.12.10",
+    "@babel/plugin-proposal-class-properties": "^7.12.1",
+    "fluent-schema": "https://github.com/pocketgems/fluent-schema/tarball/683c87a7ad106586c553fd34a6e5b445876e0582",
+    "babel-loader": "^8.2.2",
+    "license-webpack-plugin": "^2.3.17",
+    "webpack": "^5.13.0",
+    "webpack-cli": "^4.3.1",
+    "jest": "^26.4.2",
+    "nodemon": "^2.0.20"
+  }
+}

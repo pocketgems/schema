@@ -18,7 +18,7 @@ class ValidationError extends Error {
     this.badValue = badValue
     this.validationErrors = errors
     this.expectedSchema = expectedSchema
-    // istanbul ignore else
+    // istanbul ignore next
     if (['localhost', 'webpack'].includes(process.env.NODE_ENV)) {
       console.error(JSON.stringify(errors, null, 2))
     }

@@ -5,14 +5,19 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v2
         with:
           node-version: '14.x'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@pocketgems'
       - run: yarn install --frozen-lockfile
         shell: bash
         env:
-          NODE_AUTH_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: yarn test
         shell: bash

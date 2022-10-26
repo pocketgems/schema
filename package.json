@@ -35,15 +35,36 @@
     "rfdc": "^1.1.4"
   },
   "devDependencies": {
-    "@babel/core": "^7.12.10",
+    "@babel/core": "^7.17.12",
+    "@babel/eslint-parser": "^7.17.0",
     "@babel/plugin-proposal-class-properties": "^7.12.1",
+    "@babel/preset-env": "^7.17.12",
     "@pocketgems/unit-test": "^0.0.1",
     "babel-loader": "^8.2.2",
+    "eslint": "^8.22.0",
+    "eslint-config-standard": "15.0.0",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "eslint-plugin-standard": "^4.0.1",
     "fluent-schema": "https://github.com/pocketgems/fluent-schema/tarball/683c87a7ad106586c553fd34a6e5b445876e0582",
     "jest": "^26.4.2",
     "license-webpack-plugin": "^2.3.17",
     "nodemon": "^2.0.20",
+    "standard": "^15.0.0",
     "webpack": "^5.13.0",
     "webpack-cli": "^4.3.1"
+  },
+  "standard": {
+    "envs": [
+      "jest"
+    ],
+    "globals": [
+      "fail"
+    ],
+    "ignore": [
+      "**/node_modules/**"
+    ],
+    "parser": "@babel/eslint-parser"
   }
 }

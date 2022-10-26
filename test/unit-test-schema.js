@@ -5,7 +5,6 @@ const ajv = new (require('ajv'))({ allErrors: true })
 const FS = require('fluent-schema')
 
 const S = require('../src/schema')
-const { expect } = require('@jest/globals')
 
 class ProxySchema {
   constructor (fs, s) {

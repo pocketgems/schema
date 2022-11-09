@@ -1,4 +1,4 @@
-# Schema Library <!-- omit in toc -->
+# Todea Schema Library <!-- omit in toc -->
 Todea Schema library allows developers to quickly construct
 [JSON Schema](https://json-schema.org/understanding-json-schema/reference/index.html)
 and [AWS C2J Shape Schema](aws-c2j.md) without managing large JSON objects
@@ -11,6 +11,8 @@ This document assumes prior knowledge of
 and [fluent-schema API](https://github.com/fastify/fluent-schema) and will only
 discuss features unique to this library. Please familiarize yourself with the
 linked docs before continuing.
+
+[![JSDoc](https://img.shields.io/badge/Documentation-JSDoc-green.svg?logo=#222222)](https://pocketgems.github.io/schema)
 
 - [Convenient](#convenient)
   - [Shorthand Syntax](#shorthand-syntax)
@@ -71,7 +73,7 @@ Multiple calls to `prop()` can be simplified to one single call on `props()`.
 `props()` takes an object as input. Keys in the input object must be strings
 and values must be schema objects. The `S.obj({})` syntax simplifies
 `S.obj().props({})` further.
-```javascript <!-- embed:../test/unit-test-schema.js:scope:testProps -->
+```javascript <!-- embed:test/unit-test-schema.js:scope:testProps -->
   testProps () {
     const prop = S.obj()
       .prop('a', S.str)
@@ -98,8 +100,11 @@ Similarly, `S.arr().items(schema)` can be simplified to `S.arr(schema)`.
 ## Pattern Properties
 You may allow an object to contain any keys matching a given pattern via the
 `patternProps` method. For example,
-```javascript <!-- embed:../test/unit-test-aws-c2j.js:section:pattern obj example start:pattern obj example end -->
-      S.obj().patternProps({ 'xyz-.*': S.str })
+```javascript <!-- embed:test/unit-test-schema.js:scope:testCopy:patternObj -->
+    const patternObj = S.obj().patternProps({ '^xyz.*$': str })
+    expect(patternObj.jsonSchema())
+      .toStrictEqual(patternObj.copy().jsonSchema())
+  }
 ```
 
 Patterns have start and end anchors (`^` and `$`) automatically added to only
@@ -110,7 +115,7 @@ or suffix) you can use start and/or end your pattern with the `.*` pattern.
 Long descriptions can should use multiline Node strings. These strings will be
 joined by a space character to form the final description. Keep in mind that
 Markdown is supported in descriptions rendered to Swagger.
-```javascript <!-- embed:../test/unit-test-schema.js:scope:testLongDescription -->
+```javascript <!-- embed:test/unit-test-schema.js:scope:testLongDescription -->
   testLongDescription () {
     const intWithDescription = S.int.desc(`
 this will
@@ -125,7 +130,7 @@ into **one** string`)
 Examples can be provided via `examples()` API. Parameter is an array of
 examples. For a long example, an array of strings can be provided and they will
 be joined by a space character.
-```javascript <!-- embed:../test/unit-test-schema.js:scope:testLongExamples -->
+```javascript <!-- embed:test/unit-test-schema.js:scope:testLongExamples -->
   testLongExamples () {
     const intWithExamples = S.int
       .examples([
@@ -149,14 +154,14 @@ be joined by a space character.
 
 ## Map Schema
 The Map schema is a shorthand for Object schemas containing one pattern prop:
-```javascript <!-- embed:../test/unit-test-schema.js:section:ex0 start:ex1 start -->
+```javascript <!-- embed:test/unit-test-schema.js:section:ex0 start:ex1 start -->
     const fs = S.obj().patternProps({
       123123: S.arr().max(123).items(S.int).desc('desc 123')
     })
 ```
 
 becomes:
-```javascript <!-- embed:../test/unit-test-schema.js:section:ex1 start:ex1 end -->
+```javascript <!-- embed:test/unit-test-schema.js:section:ex1 start:ex1 end -->
     const s = S.map
       .keyPattern('123123')
       .value(S.arr().max(123).items(S.int).desc('desc 123'))
@@ -314,7 +319,7 @@ S.obj(S.optional({
 
 ## Set Once Only
 Most critical schema properties can be set only once. Additional attempts to update an already set property result in exceptions.
-```javascript <!-- embed:../test/unit-test-schema.js:scope:testPropOverwrite -->
+```javascript <!-- embed:test/unit-test-schema.js:scope:testPropOverwrite -->
   testPropOverwrite () {
     const str = S.str.min(1)
     expect(() => {
@@ -329,7 +334,7 @@ Most critical schema properties can be set only once. Additional attempts to upd
 ```
 
 For ObjectSchema objects, keys passed to `S.obj()`, `prop()` and `props()` must be unique. A duplicated key will trigger an exception.
-```javascript <!-- embed:../test/unit-test-schema.js:scope:testObjectPropOverwrite -->
+```javascript <!-- embed:test/unit-test-schema.js:scope:testObjectPropOverwrite -->
   testObjectPropOverwrite () {
     // Overriding an existing object property is caught
     const o = S.obj({ a: S.int })
@@ -373,7 +378,7 @@ const newSchema = schema.copy().min(1)
 ```
 
 When a schema object is passed into another schema object, e.g. `S.obj.prop()` or `S.arr.items()`, the ownership of the input schema object is transferred to the containing schema object. The input schema object is locked automatically, so further modifications to the nested schema objects are prohibited. This behavior allows the library to only [copy when explicitly requested](#explicit-copy).
-```javascript <!-- embed:../test/unit-test-schema.js:scope:testAutoLocking -->
+```javascript <!-- embed:test/unit-test-schema.js:scope:testAutoLocking -->
   testAutoLocking () {
     const a = S.str
     S.obj({ a })
@@ -461,7 +466,7 @@ To avoid hidden costs while using this library, schema copies are generally only
 schema will be locked after the change is made.
 
 The copying behavior isolates modifications to the returned objects from the original object.
-```javascript <!-- embed:../test/unit-test-schema.js:scope:testJsonSchemaIsolation -->
+```javascript <!-- embed:test/unit-test-schema.js:scope:testJsonSchemaIsolation -->
   testJsonSchemaIsolation () {
     // JsonSchemas should be copied, and changes to the returned value
     // should not be reflected to the json schema returned in next call.
@@ -473,7 +478,7 @@ The copying behavior isolates modifications to the returned objects from the ori
   }
 ```
 
-```javascript <!-- embed:../test/unit-test-schema.js:scope:testInnerSchemaMutation -->
+```javascript <!-- embed:test/unit-test-schema.js:scope:testInnerSchemaMutation -->
   testInnerSchemaMutation () {
     // When a schema is passed into another schema, then get modified, the
     // modification should not affect the previous owner schema

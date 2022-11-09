@@ -5,9 +5,10 @@
   "license": "Apache-2.0",
   "scripts": {
     "webpack": "yarn; webpack --config webpack.config.js",
-    "setup": "yarn",
+    "setup": "yarn && pip install -r requirements.txt",
     "debug": "./node_modules/nodemon/bin/nodemon.js --no-lazy --legacy-watch --watch ./src --watch ./example --watch ./test --inspect=9229 ./node_modules/jest/bin/jest.js --coverage --config=./jest.config.json --runInBand",
-    "test": "./node_modules/jest/bin/jest.js --coverage --config=./jest.config.json"
+    "test": "./node_modules/jest/bin/jest.js --coverage --config=./jest.config.json",
+    "build-doc": "./docs/build.sh"
   },
   "contributors": [
     {
@@ -49,9 +50,11 @@
     "eslint-plugin-standard": "^4.0.1",
     "fluent-schema": "https://github.com/pocketgems/fluent-schema/tarball/683c87a7ad106586c553fd34a6e5b445876e0582",
     "jest": "^26.4.2",
+    "jsdoc": "^3.6.4",
     "license-webpack-plugin": "^2.3.17",
     "nodemon": "^2.0.20",
     "standard": "^15.0.0",
+    "tui-jsdoc-template": "^1.2.2",
     "webpack": "^5.13.0",
     "webpack-cli": "^4.3.1"
   },

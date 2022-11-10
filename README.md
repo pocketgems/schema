@@ -12,7 +12,7 @@ and [fluent-schema API](https://github.com/fastify/fluent-schema) and will only
 discuss features unique to this library. Please familiarize yourself with the
 linked docs before continuing.
 
-[![JSDoc](https://img.shields.io/badge/Documentation-JSDoc-green.svg?logo=#222222)](https://pocketgems.github.io/schema)
+[![JSDoc](https://img.shields.io/badge/Documentation-JSDoc-green.svg?logo=githubpages)](https://pocketgems.github.io/schema)
 
 - [Convenient](#convenient)
   - [Shorthand Syntax](#shorthand-syntax)

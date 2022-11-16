@@ -1,7 +1,7 @@
 # Todea Schema Library <!-- omit in toc -->
 Todea Schema library allows developers to quickly construct
 [JSON Schema](https://json-schema.org/understanding-json-schema/reference/index.html)
-and [AWS C2J Shape Schema](aws-c2j.md) without managing large JSON objects
+and [AWS C2J Shape Schema]() without managing large JSON objects
 directly. It implements a subset of
 [the JSON Schema specification](https://json-schema.org/understanding-json-schema/reference/index.html)
 and a [fluent-schema](https://github.com/fastify/fluent-schema) like API.

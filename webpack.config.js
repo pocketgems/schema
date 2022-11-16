@@ -12,7 +12,7 @@ module.exports = {
   },
   mode: 'production',
   target: 'node',
-  devtool: 'eval-source-map',
+  // devtool: 'source-map',
   module: {
     rules: [
       {

@@ -82,6 +82,7 @@ class BaseSchema {
      * Indicates whether an object is locked. See {@link lock}.
      */
     this.__isLocked = false
+    this.__isOptional = false
     this.__setProp('type', this.constructor.JSON_SCHEMA_TYPE)
   }
 
@@ -192,7 +193,9 @@ class BaseSchema {
    * Marks a schema as optional. Schemas are required by default.
    */
   optional () {
-    return this.__setProp('optional', true)
+    assert(!this.__isLocked, 'Schema is locked.')
+    this.__isOptional = true
+    return this
   }
 
   /**
@@ -200,7 +203,7 @@ class BaseSchema {
    * See {@link optional}.
    */
   get required () {
-    return !this.getProp('optional')
+    return !this.__isOptional
   }
 
   /**
@@ -484,6 +487,11 @@ class NumberSchema extends BaseSchema {
   static MAX_PROP_NAME = 'maximum'
   static MIN_PROP_NAME = 'minimum'
 
+  constructor () {
+    super()
+    this.__isFloat = false
+  }
+
   /**
    * Validate input to min/max.
    * @param {String} name Property name
@@ -494,7 +502,13 @@ class NumberSchema extends BaseSchema {
   }
 
   asFloat () {
-    return this.__setProp('isFloat', true)
+    assert(!this.__isLocked, 'Schema is locked')
+    this.__isFloat = true
+    return this
+  }
+
+  get isFloat () {
+    return this.__isFloat
   }
 
   export (visitor) {

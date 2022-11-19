@@ -319,7 +319,7 @@ class TypedNumberTest extends BaseTest {
     })
     obj.compile('float schema')
     const copied = obj.copy()
-    expect(copied.objectSchemas.float.getProp('isFloat')).toBe(true)
+    expect(copied.objectSchemas.float.isFloat).toBe(true)
   }
 
   /**
@@ -525,12 +525,12 @@ class NewFeatureTest extends BaseTest {
       map: S.map.value(S.str)
     })
     Object.values(result)
-      .forEach(schema => expect(schema.properties().optional).toBe(true))
+      .forEach(schema => expect(schema.required).toBe(false))
 
     // optional should not be applied to nested schemas
-    expect(result.obj.objectSchemas.key.properties().optional).not.toBe(true)
-    expect(result.arr.itemsSchema.properties().optional).not.toBe(true)
-    expect(result.map.valueSchema.properties().optional).not.toBe(true)
+    expect(result.obj.objectSchemas.key.required).not.toBe(false)
+    expect(result.arr.itemsSchema.required).not.toBe(false)
+    expect(result.map.valueSchema.required).not.toBe(false)
   }
 
   testArray () {

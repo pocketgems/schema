@@ -307,6 +307,13 @@ class ValidationTest extends BaseTest {
       S.str.max(0.2)
     }).toThrow(/must be an integer/)
   }
+
+  testStrictMode () {
+    // sometimes schema is used as part of a larger schema
+    // but we also need to run validation against the partial
+    // schema. In either case, validation should pass, not throw error
+    S.str.default('123').compile('schema')
+  }
 }
 
 /**

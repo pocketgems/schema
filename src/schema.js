@@ -309,6 +309,7 @@ class BaseSchema {
   copy () {
     const ret = new this.constructor()
     ret.__properties = deepcopy(this.__properties)
+    ret.__isOptional = this.__isOptional
     return ret
   }
 
@@ -517,6 +518,12 @@ class NumberSchema extends BaseSchema {
 
   export (visitor) {
     return visitor.exportNumber(this)
+  }
+
+  copy () {
+    const ret = super.copy()
+    ret.__isFloat = this.__isFloat
+    return ret
   }
 }
 

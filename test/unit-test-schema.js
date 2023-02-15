@@ -599,6 +599,10 @@ class NewFeatureTest extends BaseTest {
     const patternObj = S.obj().patternProps({ '^xyz.*$': str })
     expect(patternObj.jsonSchema())
       .toStrictEqual(patternObj.copy().jsonSchema())
+
+    const double = S.double.optional().asFloat().copy()
+    expect(double.required).toBe(false)
+    expect(double.isFloat).toBe(true)
   }
 
   testCopyIsolation () {

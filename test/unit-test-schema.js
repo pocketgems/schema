@@ -264,6 +264,16 @@ class ValidationTest extends BaseTest {
     }).toThrow(/must be an integer/)
   }
 
+  testPolymorphicObject () {
+    expect(() => {
+      S.polymorphicObj()
+    }).toThrow(/must have at least one type/)
+
+    expect(() => {
+      S.polymorphicObj({ typeNameToObj: { x: 1 } })
+    }).toThrow(/object sub-types must be S.obj/)
+  }
+
   testArray () {
     expect(() => {
       S.arr().min(0.2)
@@ -776,4 +786,183 @@ into **one** string`)
   }
 }
 
-runTests(FeatureParityTest, TypedNumberTest, ValidationTest, NewFeatureTest)
+class PolymorphicObjectTest extends BaseTest {
+  testGeneratedSchemaAndValidator () {
+    const schema = S.polymorphicObj({
+      commonProps: {
+        c1: S.int,
+        c2: S.str
+      },
+      typeNameToObj: {
+        someType: { x: S.str },
+        anotherType: { x: S.int, y: S.str }
+      }
+    })
+    const jsonSchema = schema.jsonSchema()
+    delete jsonSchema.$schema
+    expect(jsonSchema).toEqual({
+      type: 'object',
+      properties: {
+        c1: { type: 'integer' },
+        c2: { type: 'string' },
+        type: { type: 'string', enum: ['anotherType', 'someType'] }
+      },
+      required: ['c1', 'c2', 'type'],
+      unevaluatedProperties: false,
+      if: {
+        properties: { type: { const: 'anotherType' } }
+      },
+      then: {
+        properties: { x: { type: 'integer' }, y: { type: 'string' } },
+        required: ['x', 'y']
+      },
+      else: {
+        if: {
+          properties: { type: { const: 'someType' } }
+        },
+        then: {
+          properties: { x: { type: 'string' } },
+          required: ['x']
+        }
+      }
+    })
+
+    // check validating
+    const validate = schema.compile('testGeneratedSchemaAndValidator')
+    const someObj = { c1: 1, c2: 'x', type: 'someType', x: 'a' }
+    expect(validate(someObj))
+    const anotherObj = { c1: 1, c2: 'x', type: 'anotherType', x: 1, y: 'xx' }
+    expect(validate(anotherObj))
+    const bad = { ...anotherObj, x: 'a' } // nope, needs to be an int here
+    expect(() => validate(bad)).toThrow(S.ValidationError)
+
+    // can't use an unknown sub-type
+    const unknownType = { ...someObj, type: 'notSomeType' }
+    expect(() => validate(unknownType)).toThrow(S.ValidationError)
+
+    // copy should work too
+    const schemaCopy = schema.copy()
+    expect(schema.jsonSchema()).toEqual(schemaCopy.jsonSchema())
+    const validateCopy = schemaCopy.compile(
+      'copy of testGeneratedSchemaAndValidator')
+    validateCopy(someObj)
+  }
+
+  testSubTypeWithNoExtraProperties () {
+    const schema = S.polymorphicObj({
+      commonProps: { c1: S.int },
+      typeNameToObj: {
+        someType: { x: S.str },
+        typeWithNoExtraProps: {}
+      }
+    })
+    const jsonSchema = schema.jsonSchema()
+    delete jsonSchema.$schema
+    expect(jsonSchema).toEqual({
+      type: 'object',
+      properties: {
+        c1: { type: 'integer' },
+        type: { type: 'string', enum: ['someType', 'typeWithNoExtraProps'] }
+      },
+      required: ['c1', 'type'],
+      unevaluatedProperties: false,
+      if: {
+        properties: { type: { const: 'someType' } }
+      },
+      then: {
+        properties: { x: { type: 'string' } },
+        required: ['x']
+      }
+    })
+
+    // check validating
+    const validate = schema.compile('testSubTypeWithNoExtraProperties')
+    const someObj = { c1: 1, type: 'someType', x: 'a' }
+    expect(validate(someObj))
+    const anotherObj = { c1: 1, type: 'typeWithNoExtraProps' }
+    expect(validate(anotherObj))
+    const bad = { ...anotherObj, x: 'a' } // nope, needs to be an int here
+    expect(() => validate(bad)).toThrow(S.ValidationError)
+
+    // copy should work too
+    const schemaCopy = schema.copy()
+    expect(schema.jsonSchema()).toEqual(schemaCopy.jsonSchema())
+    const validateCopy = schemaCopy.compile(
+      'copy of testSubTypeWithNoExtraProperties')
+    validateCopy(someObj)
+  }
+
+  testNoCommonProps () {
+    const schema = S.polymorphicObj({
+      typeNameToObj: {
+        someType: { x: S.str },
+        typeWithNoExtraProps: {}
+      }
+    })
+
+    const validate = schema.compile('testNoCommonProps')
+    const someObj = { type: 'someType', x: 'a' }
+    expect(validate(someObj))
+    const anotherObj = { type: 'typeWithNoExtraProps' }
+    expect(validate(anotherObj))
+    const bad = { ...anotherObj, x: 'a' } // nope, needs to be an int here
+    expect(() => validate(bad)).toThrow(S.ValidationError)
+  }
+
+  testCustomTypeField () {
+    // exPolymorphicObj start
+    const schema = S.polymorphicObj({
+      commonProps: { n: S.int },
+      typeNameToObj: {
+        someType: { x: S.str },
+        typeWithNoExtraProps: {}
+      },
+      typeKey: 'kind'
+    })
+    const ok1 = { kind: 'someType', x: 'a', n: 1 }
+    const ok2 = { kind: 'typeWithNoExtraProps', n: 2 }
+    // exPolymorphicObj end
+
+    const validate = schema.compile('testNoCommonProps')
+    expect(validate(ok1))
+    expect(validate(ok2))
+    const bad = { ...ok2, x: 'a' } // nope, needs to be an int here
+    expect(() => validate(bad)).toThrow(S.ValidationError)
+  }
+
+  testNestedPolymorphism () {
+    const schema = S.polymorphicObj({
+      commonProps: { c: S.bool },
+      typeNameToObj: {
+        someType: {
+          x: S.str,
+          listOfStuff: S.arr(S.polymorphicObj({
+            commonProps: { c1: S.int },
+            typeNameToObj: {
+              nested1: { x: S.int },
+              nested2: { y: S.bool }
+            }
+          }))
+        },
+        typeWithNoExtraProps: {}
+      }
+    })
+
+    const validate = schema.compile('testNestedPolymorphism')
+    const anotherObj = { type: 'typeWithNoExtraProps', c: true }
+    expect(validate(anotherObj))
+
+    const someObj = { type: 'someType', x: 'a', listOfStuff: [], c: false }
+    expect(validate(someObj))
+    someObj.listOfStuff.push({ c1: 0, type: 'nested1', x: 1 })
+    expect(validate(someObj))
+    someObj.listOfStuff.push({ c1: 0, type: 'nested2', y: true })
+    expect(validate(someObj))
+
+    someObj.listOfStuff.push({ c1: 0, type: 'nested2' })
+    expect(() => validate(someObj)).toThrow(S.ValidationError)
+  }
+}
+
+runTests(FeatureParityTest, TypedNumberTest, ValidationTest, NewFeatureTest,
+  PolymorphicObjectTest)

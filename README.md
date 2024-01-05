@@ -22,6 +22,7 @@ linked docs before continuing.
   - [Map Schema](#map-schema)
   - [Media Schema](#media-schema)
   - [Enumeration](#enumeration)
+  - [Polymorphic Objects](#polymorphic-objects)
   - [Validating Data](#validating-data)
   - [Common Schemas](#common-schemas)
   - [Getting JSON Schema](#getting-json-schema)
@@ -200,6 +201,36 @@ of strings as a parameter, or take a list of string parameters.
 ```javascript
 S.str.enum('a', 'b')
 S.str.enum(Object.keys(someObject))
+```
+
+## Polymorphic Objects
+A polymorphic object's properties depend on its type. It can be declared with
+`S.polymorphicObject({ commonProps, typeNameToObj, typeKey })`:
+* `commonProps` - Optional. The properties that all objects of this polymorphic
+  type will contain. This is the same as the argument to `S.obj()`.
+* `typeNameToObj` - Required to have at least one key-value pair. Each key is
+  the name of one of the polymorphic types this object can have. The
+  corresponding value must be an `S.obj()` or an object that can be passed to
+  `S.obj()`; it describes the additional properties of this polymorphic type.
+* `typeKey` - Optional. The default type property is `type` but can be changed
+  to anything you'd like.
+
+You can set `additionalProperties` to `true` on an `S.polymorphicObject` schema
+just like an `S.obj` schema. However, the sub-types are all bound by this.
+
+You can nest polymorphic types inside of each other or other types.
+
+```javascript <!-- embed:test/unit-test-schema.js:section:exPolymorphicObj start:exPolymorphicObj end -->
+    const schema = S.polymorphicObj({
+      commonProps: { n: S.int },
+      typeNameToObj: {
+        someType: { x: S.str },
+        typeWithNoExtraProps: {}
+      },
+      typeKey: 'kind'
+    })
+    const ok1 = { kind: 'someType', x: 'a', n: 1 }
+    const ok2 = { kind: 'typeWithNoExtraProps', n: 2 }
 ```
 
 ## Validating Data

@@ -272,7 +272,7 @@ class BaseSchema {
     assert.ok(name, 'name is required')
     if (!compiler) {
       if (!ajv) {
-        ajv = new (require('ajv'))({
+        ajv = new (require('ajv/dist/2020'))({
           allErrors: true,
           useDefaults: true,
           strictSchema: false
@@ -438,6 +438,90 @@ class ObjectSchema extends BaseSchema {
 
   export (visitor) {
     return visitor.exportObject(this)
+  }
+}
+
+/**
+ * A polymorphic type.
+ *
+ * The properties it contains will be based on its type. The type is determined
+ * by a specific property (by default named "type").
+ */
+class PolymorphicObjectSchema extends ObjectSchema {
+  static JSON_SCHEMA_TYPE = 'object'
+  static MAX_PROP_NAME = 'maxProperties'
+  static MIN_PROP_NAME = 'minProperties'
+
+  /**
+   * Creates an object schema object.
+   * @param {Object} [commonProps={}] Keys must be strings, values must be
+   *   schema objects. Passed directly to the S.obj() constructor.
+   * @param {Object} [typeNameToObj={}] Keys are strings which are valid type
+   *   names for this polymorphic object. Values are S.obj.
+   * @param {String} [typeKey='type'] The name of the property which
+   *   determines which type of data this object has (all objects will have
+   *   this property in addition to what's in commonProps).
+   */
+  constructor (commonProps = {}, typeNameToObj, typeKey) {
+    super(commonProps)
+    if (typeNameToObj === undefined) {
+      return this // copy() will set up the rest
+    }
+    this.__allowedTypeNames = Object.keys(typeNameToObj)
+    this.__allowedTypeNames.sort()
+    assert.ok(this.__allowedTypeNames.length > 0, 'must have at least one type')
+    this.prop(typeKey, S.str.enum(this.__allowedTypeNames))
+    this.typeKey = typeKey
+    this.typeNameToExtraProps = {}
+    for (const typeName of this.__allowedTypeNames) {
+      let objSchema = typeNameToObj[typeName]
+      // propSchema must be an S.obj (not S.polymorphicObj) or a plain old
+      // javascript object that can be turned into an S.obj
+      if (typeof objSchema === 'object') {
+        objSchema = S.obj(objSchema)
+      }
+      assert.ok(Object.getPrototypeOf(objSchema) === ObjectSchema.prototype,
+        'polymorphic object sub-types must be S.obj')
+      objSchema.lock()
+      const { type, ...relevantProperties } = objSchema.properties()
+      // additional properties constraint is enforced (or not) by the root
+      // polymorphic object only (ignored on sub-types)
+      delete relevantProperties.additionalProperties
+      if (Object.keys(relevantProperties).length > 0) {
+        this.typeNameToExtraProps[typeName] = relevantProperties
+      }
+    }
+  }
+
+  copy () {
+    const ret = super.copy()
+    ret.__allowedTypeNames = deepcopy(this.__allowedTypeNames)
+    ret.typeKey = this.typeKey
+    ret.typeNameToExtraProps = deepcopy(this.typeNameToExtraProps)
+    return ret
+  }
+
+  properties () {
+    const ret = super.properties()
+    let cur = ret
+    for (const typeName of this.__allowedTypeNames) {
+      const extraProps = this.typeNameToExtraProps[typeName]
+      if (!extraProps) {
+        continue
+      }
+      if (cur.if) {
+        cur.else = {}
+        cur = cur.else
+      }
+      cur.if = { properties: { [this.typeKey]: { const: typeName } } }
+      cur.then = extraProps
+    }
+    // when using applicator keywords like "if" we need to use
+    // unevaluatedProperties instead of additionalProperties (because the check
+    // needs to happen after the applicators have finalized the properties)
+    ret.unevaluatedProperties = ret.additionalProperties
+    delete ret.additionalProperties
+    return ret
   }
 }
 
@@ -751,7 +835,7 @@ class JSONSchemaExporter {
 
   export (schema) {
     const ret = deepcopy(schema.export(this))
-    ret.$schema = 'http://json-schema.org/draft-07/schema#'
+    ret.$schema = 'https://json-schema.org/draft/2020-12/schema'
     return ret
   }
 }
@@ -767,6 +851,14 @@ class S {
    * @return A new ObjectSchema object.
    */
   static obj (object) { return new ObjectSchema(object) }
+
+  /**
+   * @param {Object} object See {@link ObjectSchema#constructor}
+   * @return A new ObjectSchema object.
+   */
+  static polymorphicObj ({ commonProps = {}, typeNameToObj = {}, typeKey = 'type' } = {}) {
+    return new PolymorphicObjectSchema(commonProps, typeNameToObj, typeKey)
+  }
 
   /**
    * @param {BaseSchema} schema See {@link ArraySchema#constructor}

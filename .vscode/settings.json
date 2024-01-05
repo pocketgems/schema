@@ -24,5 +24,8 @@
                 "cmd": "embed-markdown"
             }
         ]
-    }
+    },
+    "cSpell.words": [
+        "deepcopy"
+    ]
 }

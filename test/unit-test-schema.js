@@ -1,7 +1,7 @@
 const assert = require('assert')
 
 const { BaseTest, runTests } = require('@pocketgems/unit-test')
-const ajv = new (require('ajv'))({ allErrors: true })
+const ajv = new (require('ajv/dist/2020'))({ allErrors: true })
 const FS = require('fluent-schema')
 
 const S = require('../src/schema')
@@ -110,7 +110,9 @@ class ProxySchema {
   }
 
   verify () {
-    expect(this.fs.valueOf()).toStrictEqual(this.s.jsonSchema())
+    const fsValue = this.fs.valueOf()
+    fsValue.$schema = 'https://json-schema.org/draft/2020-12/schema'
+    expect(fsValue).toStrictEqual(this.s.jsonSchema())
   }
 }
 
@@ -334,7 +336,7 @@ class TypedNumberTest extends BaseTest {
    * for ajv compiler
    */
   testFloatExplicitCompiler () {
-    const ajv = new (require('ajv'))({ allErrors: true, useDefaults: true })
+    const ajv = new (require('ajv/dist/2020'))({ allErrors: true, useDefaults: true })
     const obj = S.obj({
       float: S.double.asFloat()
     })

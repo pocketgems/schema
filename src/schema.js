@@ -272,7 +272,7 @@ class BaseSchema {
     assert.ok(name, 'name is required')
     if (!compiler) {
       if (!ajv) {
-        ajv = new (require('ajv'))({
+        ajv = new (require('ajv/dist/2020'))({
           allErrors: true,
           useDefaults: true,
           strictSchema: false
@@ -751,7 +751,7 @@ class JSONSchemaExporter {
 
   export (schema) {
     const ret = deepcopy(schema.export(this))
-    ret.$schema = 'http://json-schema.org/draft-07/schema#'
+    ret.$schema = 'https://json-schema.org/draft/2020-12/schema'
     return ret
   }
 }
